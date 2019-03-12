@@ -27,3 +27,9 @@ exports.updateVenue = function(req, res) {
         res.json(result);
     })
 };
+
+exports.categories = function(req, res) {
+    Venues.categories(function(result) {
+      res.json(result);
+    })
+};
