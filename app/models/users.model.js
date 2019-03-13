@@ -1,9 +1,12 @@
 const db = require('../../config/db');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 const WORKLOAD = 12; // Workload for BCrypt salt
 
 const unimplemented = {"Error" : "Unimplemented"};
 
+// POST: add a user to the database
 exports.insert = async function(body) {
     let info = [body.username, body.email, body.givenName, body.familyName, body.password];
 
@@ -29,4 +32,41 @@ exports.insert = async function(body) {
 
     return await db.getPool().query('INSERT INTO User(username, email, given_name, family_name, password)' +
         ' VALUES ?', [[info]]);
+};
+
+
+// POST login an existing user
+exports.authorise = async function(body) {
+    let username = body.username;
+    let email = body.email;
+    let password = body.password;
+    let auth;   // This will be a JSON object holding the username/email
+
+    // Check for non-empty
+    if (typeof password === "undefined") {
+        throw ("Missing password");
+    } else if (typeof username === "undefined") {
+        if (typeof email === "undefined") {
+            throw ("No username or email");
+        } else {
+            auth = {"email" : email};
+        }
+    } else {
+        auth = {"username" : username};
+    }
+
+    let result = await db.getPool().query('SELECT user_id, password FROM User WHERE ?', auth);
+
+    // Set the userId and password hash
+    const userId = result[0]["user_id"];
+    const hash = result[0]["password"];
+
+    // Compare password with hash
+    const valid = await bcrypt.compare(password, hash);
+    if (valid) {
+        // Generate token
+        const token = jwt.sign({"userId" : userId}, 'seng365');
+        return {"userId" : userId, "token" : token};
+    }
+    throw ("Invalid login");
 };
