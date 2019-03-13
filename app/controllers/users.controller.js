@@ -15,3 +15,20 @@ exports.register = async function(req, res) {
         res.json("Bad Request");
     }
 };
+
+
+// POST: login an existing user
+exports.login = async function(req, res) {
+    try {
+        let result = await Users.authorise(req.body);
+        res.setHeader("Content-Type", "application/json");
+        res.statusMessage = 'OK';
+        res.status(200);
+        res.json(result);
+    } catch (err) {
+        res.setHeader("Content-Type", "application/json");
+        res.statusMessage = 'Bad Request';
+        res.status(400);
+        res.json("Bad Request");
+    }
+};
