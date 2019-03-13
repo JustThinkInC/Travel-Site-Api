@@ -10,11 +10,11 @@ module.exports = function (app) {
         .post(users.login);
 
     // Logout a logged in user
-     app.route(app.rootUrl + '/users/logout')
-         .post(users.logout);
+    app.route(app.rootUrl + '/users/logout')
+        .post(users.logout);
 
     // View or update information about a user
-    // app.route(app.rootUrl + '/users/:id')
-    //     .get(users.getUser)
-    //     .patch(users.patchUser);
+     app.route(app.rootUrl + '/users/:id')
+         .get(users.getUser)
+        //.patch(users.patchUser);
 };
