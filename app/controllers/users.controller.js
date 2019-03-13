@@ -50,3 +50,22 @@ exports.logout = async function(req, res) {
         res.json("Unauthorized");
     }
 };
+
+
+// GET: View specific users details
+exports.getUser = async function(req, res) {
+    try {
+        let result = await Users.get(req);
+        res.setHeader("Content-Type", "application/json");
+        res.statusMessage = 'OK';
+        res.status(200);
+        res.json(result);
+    } catch (err) {
+        console.log(err);
+        res.setHeader("Content-Type", "application/json");
+        // Note the US spelling of unauthorised
+        res.statusMessage = 'Not Found';
+        res.status(404);
+        res.json("Not Found");
+    }
+};
