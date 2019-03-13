@@ -76,6 +76,16 @@ exports.authorise = async function(body) {
 
 
 // POST log out an existing user
-exports.logout = async function(body) {
-    return await db.getPool().query('DELETE FROM User WHERE auth_token = ?', [body.token]);
+exports.logout = async function(headers) {
+    const token = headers["x-authorization"];
+
+    // Check token exists
+    if (token === 'undefined') throw ("Missing authorisation token");
+
+    // Delete token if it is found
+    const rows = await db.getPool().query('DELETE FROM User WHERE auth_token = ?', [token]);
+
+    // If no rows have been changed, then no one was logged in
+    if (rows["affectedRows"] === 0) throw ("Token does not match any users");
+    return;
 };
