@@ -6,14 +6,12 @@ exports.register = async function(req, res) {
         let result = await Users.insert(req.body);
         res.setHeader("Content-Type", "application/json");
         res.statusMessage = 'Created';
-        //res.json("Created");
-        res.sendStatus(201);
+        res.status(201);
+        res.json("Created");
     } catch (err) {
         res.setHeader("Content-Type", "application/json");
-        res.json("Bad Request");
         res.statusMessage = 'Bad Request';
-        //res.json("Bad Request");
-        res.sendStatus(400);
-
+        res.status(400);
+        res.json("Bad Request");
     }
 };
