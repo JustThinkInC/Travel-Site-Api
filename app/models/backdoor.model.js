@@ -58,7 +58,9 @@ async function populateDefaultUsers() {
 
 async function changePasswordToHash(user, passwordIndex) {
     // TODO you need to implement "passwords.hash()" yourself, then uncomment the line below.
-    // user[passwordIndex] = await passwords.hash(user[passwordIndex]);
+    const passwords = require('bcryptjs');
+    const salt = passwords.genSaltSync(12);
+    user[passwordIndex] = await passwords.hash(user[passwordIndex], salt);
 
     // It is recommended you use a reputable cryptology library to do the actual hashing/comparing for you...
 }
