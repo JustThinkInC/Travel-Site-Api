@@ -1,6 +1,6 @@
 const db = require('../../config/db');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 const WORKLOAD = 12; // Workload for BCrypt salt
 
@@ -65,7 +65,10 @@ exports.authorise = async function(body) {
     const valid = await bcrypt.compare(password, hash);
     if (valid) {
         // Generate token
-        const token = jwt.sign({"userId" : userId}, 'seng365');
+        const token = crypto.randomBytes(32).toString('hex');
+        // Save token to database
+        await db.getPool().query("UPDATE User SET auth_token = ? WHERE user_id = ?", [token, userId]);
+
         return {"userId" : userId, "token" : token};
     }
     throw ("Invalid login");
