@@ -7,7 +7,7 @@ exports.register = async function(req, res) {
         res.setHeader("Content-Type", "application/json");
         res.statusMessage = 'Created';
         res.status(201);
-        res.json({"userId":JSON.stringify(result.insertId)});
+        res.json({"userId":result.insertId});
     } catch (err) {
         res.setHeader("Content-Type", "application/json");
         res.statusMessage = 'Bad Request';
