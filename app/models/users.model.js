@@ -106,5 +106,11 @@ exports.get = async function(req) {
     }
     delete details["auth_token"];
 
+    // Change key values to match expected JSON camel case
+    details["givenName"] = details["given_name"];
+    delete details["given_name"];
+    details["familyName"] = details["family_name"];
+    delete details.family_name;
+
     return details;
 };
