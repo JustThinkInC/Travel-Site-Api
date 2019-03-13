@@ -65,7 +65,7 @@ exports.authorise = async function(body) {
     const valid = await bcrypt.compare(password, hash);
     if (valid) {
         // Generate token
-        const token = crypto.randomBytes(32).toString('hex');
+        const token = crypto.randomBytes(16).toString('hex');
         // Save token to database
         await db.getPool().query("UPDATE User SET auth_token = ? WHERE user_id = ?", [token, userId]);
 
@@ -83,8 +83,8 @@ exports.logout = async function(headers) {
     if (token === 'undefined') throw ("Missing authorisation token");
 
     // Delete token if it is found
-    const rows = await db.getPool().query('DELETE FROM User WHERE auth_token = ?', [token]);
-
+    const rows = await db.getPool().query('UPDATE User SET auth_token = "" WHERE auth_token = ?', [token]);
+  
     // If no rows have been changed, then no one was logged in
     if (rows["affectedRows"] === 0) throw ("Token does not match any users");
     return;
