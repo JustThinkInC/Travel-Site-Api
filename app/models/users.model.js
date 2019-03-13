@@ -89,3 +89,22 @@ exports.logout = async function(headers) {
     if (rows["affectedRows"] === 0) throw ("Token does not match any users");
     return;
 };
+
+
+// GET view a specific users details
+exports.get = async function(req) {
+    const token = req.headers["x-authorization"];
+    const id = req.params.id;
+    let showEmail = false;
+
+    // User details
+    let details = (await db.getPool().query('SELECT username, email, given_name, family_name, auth_token ' +
+        'FROM User WHERE user_id = ?', [id]))[0];
+
+    if (details["auth_token"] !== null && details["auth_token"] !== token) {
+        delete details["email"];
+    }
+    delete details["auth_token"];
+
+    return details;
+};
