@@ -4,12 +4,16 @@ const Users = require('../models/users.model');
 exports.register = async function(req, res) {
     try {
         let result = await Users.insert(req.body);
+        res.setHeader("Content-Type", "application/json");
         res.statusMessage = 'Created';
-        res.json("Created");
+        //res.json("Created");
         res.sendStatus(201);
     } catch (err) {
-        res.statusMessage = 'Bad Request';
+        res.setHeader("Content-Type", "application/json");
         res.json("Bad Request");
+        res.statusMessage = 'Bad Request';
+        //res.json("Bad Request");
         res.sendStatus(400);
+
     }
 };
