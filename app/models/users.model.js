@@ -73,3 +73,9 @@ exports.authorise = async function(body) {
     }
     throw ("Invalid login");
 };
+
+
+// POST log out an existing user
+exports.logout = async function(body) {
+    return await db.getPool().query('DELETE FROM User WHERE auth_token = ?', [body.token]);
+};
