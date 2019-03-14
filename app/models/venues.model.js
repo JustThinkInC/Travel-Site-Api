@@ -138,7 +138,7 @@ exports.patchVenue = async function(req) {
         // Get user id of person attempting authorization
         let user = await db.getPool().query("SELECT user_id FROM User WHERE auth_token = ?", [auth]);
         // If user is not admin, operation is forbidden
-        if (typeof user === "undefined" || user[0]["user_id"] !== venue[0]["admin_id"]) throw FORBIDDENERROR;
+        if (typeof user[0] === "undefined" || user[0]["user_id"] !== venue[0]["admin_id"]) throw FORBIDDENERROR;
     }
 
     // Updated information
@@ -153,7 +153,7 @@ exports.patchVenue = async function(req) {
 
     if (info.length < 1) {throw {name:"Bad Request", message:"Bad Request"}}
 
-    return await db.getPool().query("UPDATE Venue SET ?", [info]);
+    return await db.getPool().query("UPDATE Venue SET ? WHERE venue_id = ?", [info, id]);
 };
 
 
