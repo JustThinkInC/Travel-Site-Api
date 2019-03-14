@@ -101,7 +101,7 @@ exports.get = async function(req) {
     let details = (await db.getPool().query('SELECT username, email, given_name, family_name, auth_token ' +
         'FROM User WHERE user_id = ?', [id]))[0];
 
-    if (token !== '' || details["auth_token"] !== null || details["auth_token"] !== token) {
+    if (token === '' || details["auth_token"] === null || details["auth_token"] !== token) {
         delete details["email"];
     }
     delete details["auth_token"];
