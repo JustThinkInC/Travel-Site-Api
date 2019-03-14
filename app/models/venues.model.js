@@ -81,9 +81,32 @@ exports.insert = async function(headers, body) {
 
 };
 
-exports.getVenue = function(done) {
-    done(unimplemented);
+// GET specific venue
+exports.getVenue = async function(id) {
+    const venueRaw = await db.getPool().query("SELECT * FROM Venue WHERE venue_id = ?", id);
+    let venueJSON = JSON.parse(JSON.stringify(venueRaw[0]));
+
+    // Get admin and category IDs, then remove them from JSON object
+    let admin = venueJSON["admin_id"];
+    let categoryID = venueJSON["category_id"];
+    delete venueJSON["amdin_id"];
+    delete venueJSON["category_id"];
+
+    // Get admin and category information
+    let adminInfo = await db.getPool().query("SELECT user_id, username FROM User WHERE user_id = ?", admin);
+    let categoryInfo = await db.getPool().query("SELECT * FROM VenueCategory WHERE category_id = ?", categoryID);
+
+    // Convert the information to JSON
+    adminInfo = JSON.parse(JSON.stringify(adminInfo[0]));
+    categoryInfo = JSON.parse(JSON.stringify(categoryInfo[0]));
+
+    // Return all information as JSON
+    return {"venueName":venueJSON["venue_name"], "admin":adminInfo, "category":categoryInfo, "city":venueJSON["city"],
+            "shortDescription":venueJSON["short_description"], "longDescription":venueJSON["long_description"],
+            "dateAdded":venueJSON["date_added"], "address":venueJSON["address"], "latitude":venueJSON["latitude"],
+        "longitude":venueJSON["longitude"]}
 };
+
 
 exports.patchVenue = function(done) {
     done(unimplemented);
