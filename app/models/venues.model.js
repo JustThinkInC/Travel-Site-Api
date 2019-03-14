@@ -92,5 +92,6 @@ exports.patchVenue = function(done) {
 
 // GET: all data about venue categories
 exports.categories = async function() {
-    return unimplemented;
+    const result = await db.getPool().query("SELECT * FROM VenueCategory");
+    return JSON.parse(JSON.stringify(result));
 };
