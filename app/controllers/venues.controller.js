@@ -34,10 +34,19 @@ exports.add = async function(req, res) {
 };
 
 // GET a specific venue
-exports.viewVenue = function(req, res) {
-    Venues.getVenue(function(result) {
+exports.viewVenue = async function(req, res) {
+    try {
+        let result = await Venues.getVenue(req.params.id);
+        res.setHeader("Content-Type", "application/json");
+        res.statusMessage = 'OK';
+        res.status(200);
         res.json(result);
-    })
+    } catch (err) {
+        res.setHeader("Content-Type", "application/json");
+        res.statusMessage = 'Not Found';
+        res.status(404);
+        res.json("Not Found");
+    }
 };
 
 // PATCH (update) a specific venue
