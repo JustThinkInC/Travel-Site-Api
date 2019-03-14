@@ -24,7 +24,7 @@ exports.add = async function(req, res) {
         res.setHeader("Content-Type", "application/json");
         if (err.name === "Unauthorized") {
             res.statusMessage =  "Unauthorized";
-            res.status = 401;
+            res.status (401);
             res.json("Unauthorized");
         } else {
             res.statusMessage = 'Bad Request';

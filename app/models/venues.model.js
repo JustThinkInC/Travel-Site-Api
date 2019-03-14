@@ -57,7 +57,7 @@ exports.insert = async function(headers, body) {
 
     // Validate token exists
     let user = (await db.getPool().query("SELECT user_id, auth_token FROM User WHERE auth_token = ?", [auth]))[0];
-    if (user["auth_token"] === null || typeof user["auth_token"] === "undefined") throw authError;
+    if (typeof user === "undefined" || user["auth_token"] === null || typeof user["auth_token"] === "undefined") throw authError;
 
     // Construct info array
     let info = [user["user_id"], body.venueName, body.categoryId, body.city, body.shortDescription, body.longDescription,
