@@ -61,7 +61,6 @@ exports.getUser = async function(req, res) {
         res.status(200);
         res.json(result);
     } catch (err) {
-        console.log(err);
         res.setHeader("Content-Type", "application/json");
         // Note the US spelling of unauthorised
         res.statusMessage = 'Not Found';
