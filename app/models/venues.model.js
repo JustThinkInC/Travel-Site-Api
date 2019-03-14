@@ -143,7 +143,7 @@ exports.patchVenue = async function(req) {
 
     // Updated information
     let info = {"venue_name":body["venueName"], "category_id":body["categoryId"], "city":body["city"],
-        "shortDescription":body["shortDescription"], "longDescription":body["longDescription"],
+        "short_description":body["shortDescription"], "long_description":body["longDescription"],
         "address":body["address"], "latitude":body["latitude"], "longitude":body["longitude"]};
 
     // Check information exists
