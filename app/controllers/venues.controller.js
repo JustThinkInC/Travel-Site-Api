@@ -47,8 +47,19 @@ exports.updateVenue = function(req, res) {
     })
 };
 
-exports.categories = function(req, res) {
-    Venues.categories(function(result) {
-      res.json(result);
-    })
+
+// GET all data about venue categories
+exports.categories = async function(req, res) {
+    try {
+        let result = await Venues.categories();
+        res.setHeader("Content-Type", "application/json");
+        res.statusMessage = 'OK';
+        res.status(200);
+        res.json(result);
+    } catch (err) {
+        res.setHeader("Content-Type", "application/json");
+        res.statusMessage = 'Internal Server Error';
+        res.status(500);
+        res.json("Internal Server Error");
+    }
 };
