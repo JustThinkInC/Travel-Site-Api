@@ -20,7 +20,6 @@ exports.add = async function(req, res) {
         res.status(201);
         res.json({"venueId" : result.insertId});
     } catch (err) {
-        console.log(err);
         res.setHeader("Content-Type", "application/json");
         if (err.name === "Unauthorized") {
             res.statusMessage =  "Unauthorized";
