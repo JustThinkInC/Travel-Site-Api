@@ -128,5 +128,17 @@ exports.patchVenue = function(done) {
 // GET: all data about venue categories
 exports.categories = async function() {
     const result = await db.getPool().query("SELECT * FROM VenueCategory");
-    return JSON.parse(JSON.stringify(result));
+     jsonRaw = JSON.parse(JSON.stringify(result));
+
+     // Change from snake case to camel case for automated tests
+     for(let i=0; i < jsonRaw.length; i++) {
+         jsonRaw[i]["categoryId"] = jsonRaw[i]["category_id"];
+         jsonRaw[i]["categoryName"] = jsonRaw[i]["category_name"];
+         jsonRaw[i]["categoryDescription"] = jsonRaw[i]["category_description"];
+         delete jsonRaw[i]["category_id"];
+         delete jsonRaw[i]["category_name"];
+         delete jsonRaw[i]["category_description"];
+     }
+
+     return jsonRaw;
 };
