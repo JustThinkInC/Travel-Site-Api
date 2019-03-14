@@ -151,7 +151,7 @@ exports.patchVenue = async function(req) {
         if (typeof info[key] === "undefined" || info[key] === null) delete info[key];
     }
 
-    if (info.length < 1) {throw {name:"Bad Request", message:"Bad Request"}}
+    if (Object.keys(info).length === 0) throw {name:"Bad Request", message:"Bad Request"};
 
     return await db.getPool().query("UPDATE Venue SET ? WHERE venue_id = ?", [info, id]);
 };
