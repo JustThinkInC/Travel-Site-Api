@@ -89,6 +89,8 @@ exports.patchVenue = function(done) {
     done(unimplemented);
 };
 
-exports.categories = function(done) {
-    done(unimplemented);
+
+// GET: all data about venue categories
+exports.categories = async function() {
+    return unimplemented;
 };
