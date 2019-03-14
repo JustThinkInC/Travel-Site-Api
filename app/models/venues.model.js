@@ -100,6 +100,18 @@ exports.getVenue = async function(id) {
     adminInfo = JSON.parse(JSON.stringify(adminInfo[0]));
     categoryInfo = JSON.parse(JSON.stringify(categoryInfo[0]));
 
+    // Change keys to match expected JSON output
+    adminInfo["userId"] = adminInfo["user_id"];
+    categoryInfo["categoryId"] = categoryInfo["category_id"];
+    categoryInfo["categoryName"] = categoryInfo["category_name"];
+    categoryInfo["categoryDescription"] = categoryInfo["category_description"];
+
+    // Delete unexpected format keys
+    delete adminInfo["user_id"];
+    delete categoryInfo["category_id"];
+    delete categoryInfo["category_name"];
+    delete categoryInfo["category_description"];
+
     // Return all information as JSON
     return {"venueName":venueJSON["venue_name"], "admin":adminInfo, "category":categoryInfo, "city":venueJSON["city"],
             "shortDescription":venueJSON["short_description"], "longDescription":venueJSON["long_description"],
