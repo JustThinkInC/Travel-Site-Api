@@ -72,11 +72,12 @@ exports.insert = async function(headers, body) {
     if (! (-90 <= info["latitude"] <= 90 || -180 <= info["longitude"] <= 180)) throw ("Invalid latitude or longitude");
 
     // Check categoryId exists
-    const categoryId = (await db.getPool().query("SELECT * FROM VenueCategory WHERE category_id = ?", [info[1]]))[0];
+    const categoryId = (await db.getPool().query("SELECT * FROM VenueCategory WHERE category_id = ?", [info[2]]))[0];
+
     if (typeof categoryId === "undefined") throw ("Invalid category");
 
     return await db.getPool().query("INSERT INTO Venue(admin_id, venue_name, category_id, city, short_description, " +
-        "long_description, date_added, address, latitude, longitude", [info]);
+        "long_description, date_added, address, latitude, longitude) VALUES (?)", [info]);
 
 };
 
