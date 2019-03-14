@@ -80,11 +80,11 @@ exports.logout = async function(headers) {
     const token = headers["x-authorization"];
 
     // Check token exists
-    if (token === 'undefined') throw ("Missing authorisation token");
+    if (token === 'undefined' || token === '' || token === null) throw ("Missing authorisation token");
 
     // Delete token if it is found
     const rows = await db.getPool().query('UPDATE User SET auth_token = "" WHERE auth_token = ?', [token]);
-  
+
     // If no rows have been changed, then no one was logged in
     if (rows["affectedRows"] === 0) throw ("Token does not match any users");
     return;
@@ -101,7 +101,7 @@ exports.get = async function(req) {
     let details = (await db.getPool().query('SELECT username, email, given_name, family_name, auth_token ' +
         'FROM User WHERE user_id = ?', [id]))[0];
 
-    if (details["auth_token"] !== null && details["auth_token"] !== token) {
+    if (token !== '' || details["auth_token"] !== null || details["auth_token"] !== token) {
         delete details["email"];
     }
     delete details["auth_token"];
