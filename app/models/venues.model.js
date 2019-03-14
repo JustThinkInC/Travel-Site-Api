@@ -1,6 +1,9 @@
 const db = require('../../config/db');
 
 const unimplemented = {"Error" : "Unimplemented"};  // Unimplemented error message in JSON
+const AUTHERROR = {name:"Unauthorized", message:"Unauthorized"};
+const NOTFOUNDERROR = {name:"Not Found", message:"Not Found"};
+const FORBIDDENERROR = {name:"Forbidden", message:"Forbidden"};
 
 exports.getAll = function(values, done) {
     let query = [];
@@ -49,11 +52,11 @@ exports.getAll = function(values, done) {
 
 // POST: add a venue
 exports.insert = async function(headers, body) {
-    const authError = {name:"Unauthorized", message:"Unauthorized"};
+
 
     // Check if authorization exists
     let auth = headers["x-authorization"];
-    if (auth === '' || typeof auth === "undefined" || auth === null) throw authError;
+    if (auth === '' || typeof auth === "undefined" || auth === null) throw AUTHERROR;
 
     // Validate token exists
     let user = (await db.getPool().query("SELECT user_id, auth_token FROM User WHERE auth_token = ?", [auth]))[0];
@@ -120,25 +123,54 @@ exports.getVenue = async function(id) {
 };
 
 
-exports.patchVenue = function(done) {
-    done(unimplemented);
+exports.patchVenue = async function(req) {
+    const body = req.body;
+    let id = req.params.id;
+    let auth = req.headers["x-authorization"];
+    let venue;
+
+    // Check authorisation
+    if (typeof auth === "undefined" || auth === "" || auth === null) {
+        throw AUTHERROR;
+    } else {
+        venue = await db.getPool().query("SELECT * FROM Venue WHERE venue_id = ?", [id]);
+        if (typeof venue[0] === "undefined") throw NOTFOUNDERROR;
+        // Get user id of person attempting authorization
+        let user = await db.getPool().query("SELECT user_id FROM User WHERE auth_token = ?", [auth]);
+        // If user is not admin, operation is forbidden
+        if (typeof user === "undefined" || user[0]["user_id"] !== venue[0]["admin_id"]) throw FORBIDDENERROR;
+    }
+
+    // Updated information
+    let info = {"venue_name":body["venueName"], "category_id":body["categoryId"], "city":body["city"],
+        "shortDescription":body["shortDescription"], "longDescription":body["longDescription"],
+        "address":body["address"], "latitude":body["latitude"], "longitude":body["longitude"]};
+
+    // Check information exists
+    for(let key in info) {
+        if (typeof info[key] === "undefined" || info[key] === null) delete info[key];
+    }
+
+    if (info.length < 1) {throw {name:"Bad Request", message:"Bad Request"}}
+
+    return await db.getPool().query("UPDATE Venue SET ?", [info]);
 };
 
 
 // GET: all data about venue categories
 exports.categories = async function() {
     const result = await db.getPool().query("SELECT * FROM VenueCategory");
-     jsonRaw = JSON.parse(JSON.stringify(result));
+    let jsonRaw = JSON.parse(JSON.stringify(result));
 
-     // Change from snake case to camel case for automated tests
-     for(let i=0; i < jsonRaw.length; i++) {
-         jsonRaw[i]["categoryId"] = jsonRaw[i]["category_id"];
-         jsonRaw[i]["categoryName"] = jsonRaw[i]["category_name"];
-         jsonRaw[i]["categoryDescription"] = jsonRaw[i]["category_description"];
-         delete jsonRaw[i]["category_id"];
-         delete jsonRaw[i]["category_name"];
-         delete jsonRaw[i]["category_description"];
-     }
+    // Change from snake case to camel case for automated tests
+    for(let i=0; i < jsonRaw.length; i++) {
+        jsonRaw[i]["categoryId"] = jsonRaw[i]["category_id"];
+        jsonRaw[i]["categoryName"] = jsonRaw[i]["category_name"];
+        jsonRaw[i]["categoryDescription"] = jsonRaw[i]["category_description"];
+        delete jsonRaw[i]["category_id"];
+        delete jsonRaw[i]["category_name"];
+        delete jsonRaw[i]["category_description"];
+    }
 
-     return jsonRaw;
+    return jsonRaw;
 };
