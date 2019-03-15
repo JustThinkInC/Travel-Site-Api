@@ -145,6 +145,7 @@ exports.patchUser = async function(req) {
     for(let key in info) {
         if (typeof info[key] === "undefined" || info[key] === null) delete info[key];
         if (key == "password" && typeof info[key] === "number") throw BADREQUESTERROR;
+        if (info[key] === '') throw BADREQUESTERROR;
     }
 
     if (Object.keys(info).length === 0) throw BADREQUESTERROR;
