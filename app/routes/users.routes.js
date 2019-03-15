@@ -16,5 +16,5 @@ module.exports = function (app) {
     // View or update information about a user
      app.route(app.rootUrl + '/users/:id')
          .get(users.getUser)
-        //.patch(users.patchUser);
+        .patch(users.patchUser);
 };
