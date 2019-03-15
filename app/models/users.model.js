@@ -10,6 +10,7 @@ const WORKLOAD = 12; // Workload for BCrypt salt
 
 const unimplemented = {"Error" : "Unimplemented"};
 
+
 // POST: add a user to the database
 exports.insert = async function(body) {
     let info = [body.username, body.email, body.givenName, body.familyName, body.password];
@@ -118,6 +119,7 @@ exports.get = async function(req) {
 
     return details;
 };
+
 
 // PATCH (update) a specific user's details
 exports.patchUser = async function(req) {
