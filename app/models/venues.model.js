@@ -120,7 +120,7 @@ exports.getVenue = async function(id) {
         "longitude":venueJSON["longitude"]}
 };
 
-
+// PATCH (update) specific venue
 exports.patchVenue = async function(req) {
     const body = req.body;
     let id = req.params.id;
