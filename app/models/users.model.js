@@ -1,6 +1,10 @@
 const db = require('../../config/db');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const AUTHERROR = {name:"Unauthorized", message:"Unauthorized"};
+const NOTFOUNDERROR = {name:"Not Found", message:"Not Found"};
+const FORBIDDENERROR = {name:"Forbidden", message:"Forbidden"};
+const BADREQUESTERROR = {name:"Bad Request", message:"Bad Request"};
 
 const WORKLOAD = 12; // Workload for BCrypt salt
 
@@ -113,4 +117,37 @@ exports.get = async function(req) {
     delete details.family_name;
 
     return details;
+};
+
+// PATCH (update) a specific user's details
+exports.patchUser = async function(req) {
+    const body = req.body;
+    let id = req.params.id;
+    let auth = req.headers["x-authorization"];
+    let user;
+
+    // Check authorisation
+    if (typeof auth === "undefined" || auth === "" || auth === null) {
+        throw AUTHERROR;
+    } else {
+        // Check user exists
+        user = await db.getPool().query("SELECT * FROM User WHERE user_id = ?", [id]);
+        if (typeof user[0] === "undefined") throw NOTFOUNDERROR;
+        // If user is not same as logged in, operation is forbidden
+        if (typeof user[0] === "undefined" || user[0]["auth_token"] !== auth) throw FORBIDDENERROR;
+    }
+
+    // Updated information
+    let info = {"username":body["userName"], "email":body["email"], "given_name":body["givenName"],
+        "family_name":body["familyName"], "password":body["password"]};
+
+    // Check information exists
+    for(let key in info) {
+        if (typeof info[key] === "undefined" || info[key] === null) delete info[key];
+        if (key == "password" && typeof info[key] === "number") throw BADREQUESTERROR;
+    }
+
+    if (Object.keys(info).length === 0) throw BADREQUESTERROR;
+
+    return await db.getPool().query("UPDATE User SET ? WHERE user_id = ?", [info, id]);
 };
