@@ -18,15 +18,18 @@ exports.addReview = async function(req) {
     } else {
         // Check user exists
         user = await db.getPool().query("SELECT * FROM User WHERE auth_token = ?", [auth]);
-        if (typeof user[0] === "undefined") throw NOTFOUNDERROR;
+        if (typeof user[0] === "undefined") throw AUTHERROR;
+
         // Check user is not admin of venue
-        if (user[0]["user_id"] === id) throw FORBIDDENERROR;
+        const admin = await db.getPool().query("SELECT admin_id FROM Venue WHERE venue_id = ?", [id]);
+        if (user[0]["user_id"] === admin[0]["admin_id"]) throw FORBIDDENERROR;
+
         // Ensure user has not already reviewed said venue
         let reviewedVenues = await db.getPool().query("SELECT reviewed_venue_id FROM Review WHERE review_author_id = ?",
             user[0]["user_id"]);
         reviewedVenues = JSON.parse(JSON.stringify(reviewedVenues));
         for(let i=0; i < Object.keys(reviewedVenues).length; i++) {
-            if (reviewedVenues[i] === user[0]["user_id"]) throw FORBIDDENERROR;
+            if (reviewedVenues[i]["reviewed_venue_id"].toString() === id) throw FORBIDDENERROR;
         }
     }
 
@@ -39,7 +42,7 @@ exports.addReview = async function(req) {
     }
 
     // Check ratings are valid: non-decimal, and between 0 to 5 inclusive
-    if (!(0 <= review["star_rating"] <= 5 && 0 <= review["cost_rating"] <= 5)) throw BADREQUESTERROR;
+    if ((0 > review[3] || review[3] > 5 || 0 > review[4] || review[4] > 5)) throw BADREQUESTERROR;
     if (review[3] % 1 !== 0 || review[4] % 1 !== 0) throw BADREQUESTERROR;
 
     return await db.getPool().query("INSERT INTO Review(reviewed_venue_id, review_author_id, review_body, star_rating," +
