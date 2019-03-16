@@ -27,3 +27,20 @@ exports.review = async function(req, res) {
         res.json();
     }
 };
+
+// GET all reviews for a specific venue
+exports.view = async function(req, res) {
+    try {
+        let result = await Reviews.viewReviews(req.params.id);
+        res.setHeader("Content-Type", "application/json");
+        res.statusMessage = 'OK';
+        res.status(200);
+        res.json(result);
+    } catch (err) {
+        console.log(err)
+        res.setHeader("Content-Type", "application/json");
+        res.statusMessage = "Not Found";
+        res.status(404);
+        res.json();
+    }
+};
