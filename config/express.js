@@ -16,13 +16,14 @@ module.exports = function () {
     app.use(allowCrossOriginRequests);
     app.use(bodyParser.json());
     app.use(bodyParser.raw({ type: 'text/plain' }));  // for the /executeSql endpoint
+    app.use(bodyParser.raw({inflate:"true", limit:"5mb", type:["image/jpeg", "image/png"]}));
 
     // ROUTES
     require('../app/routes/backdoor.routes')(app);
     require('../app/routes/venues.routes')(app);
     // require('../app/routes/venues.photos.routes')(app);
     require('../app/routes/users.routes')(app);
-    // require('../app/routes/users.photos.routes')(app);
+     require('../app/routes/users.photos.routes')(app);
     require('../app/routes/reviews.routes')(app);
 
     // DEBUG (you can remove this)
