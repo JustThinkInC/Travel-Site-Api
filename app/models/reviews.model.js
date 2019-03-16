@@ -48,3 +48,32 @@ exports.addReview = async function(req) {
     return await db.getPool().query("INSERT INTO Review(reviewed_venue_id, review_author_id, review_body, star_rating," +
         "cost_rating, time_posted) VALUES ?", [[review]]);
 };
+
+
+// GET: all reviews for a venue
+exports.viewReviews = async function(id) {
+    // Check venue exists
+    let reviews = await db.getPool().query("SELECT review_author_id, review_body, star_rating, cost_rating, time_posted " +
+        "FROM Review WHERE reviewed_venue_id = ? ORDER BY time_posted DESC", [id]);
+
+    let numReviews = Object(reviews).length;
+    // 404 if no reviews are found
+    if (numReviews === 0) throw NOTFOUNDERROR;
+
+    // This will hold all the reviews of the venue after
+    // building the JSON object of the review
+    let result = [];
+
+    for (let i = 0; i < numReviews; i++) {
+        let userId = reviews[i]["review_author_id"];
+        let user = await db.getPool().query("SELECT username FROM User WHERE user_id = ?", userId);
+        let review = {"reviewAuthor":{"userId":userId, "username":user[0]["username"]}, "reviewBody":reviews[i]["review_body"],
+                      "starRating":reviews[i]["star_rating"], "costRating":reviews[i]["cost_rating"],
+                      "timePosted":reviews[i]["time_posted"]};
+
+        result.push(review);
+    }
+
+
+    return result;
+};
