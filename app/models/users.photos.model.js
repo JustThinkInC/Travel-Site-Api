@@ -51,3 +51,21 @@ exports.insert = async function(req) {
 
     return {"message":"Created", "status":201};
 };
+
+
+// POST: add a user to the database
+exports.view = async function(id) {
+    let response = {"content":"png", "image":null};
+
+    // If file exists, status is 200
+    if (fs.existsSync(FOLDER+id+".jpeg")) {
+        response["content"] = "jpeg";
+        response["image"] = fs.readFileSync(FOLDER+id+".jpeg");
+    } else if (fs.existsSync(FOLDER+id+".png")) {
+        response["image"] = fs.readFileSync(FOLDER+id+".png");
+    } else {
+        throw NOTFOUNDERROR;
+    }
+
+    return response;
+};
