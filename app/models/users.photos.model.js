@@ -17,6 +17,7 @@ exports.insert = async function(req) {
     let auth = headers["x-authorisation"];
     let id = req.params.id;
     let user;
+    let extension;
 
     //Check authorisation
     if (typeof auth === "undefined" || auth === "" || auth === null) {
@@ -29,8 +30,23 @@ exports.insert = async function(req) {
         if (user[0]["auth_token"] !== auth) throw FORBIDDENERROR;
     }
 
-    let extension = (req.headers["content-type"] === PNG) ? ".png" : ".jpeg";
+    // Set extension of file to write
+    if (req.headers["content-type"] == PNG) {
+        extension = ".png";
+    } else if (req.headers["content-type"] == JPEG) {
+        extension = ".jpeg";
+    } else {
+        throw BADREQUESTERROR;  //Invalid request
+    }
+
+    // If file exists, status is 200
+    if (fs.existsSync(FOLDER+user[0]["user_id"]+".jpeg") || fs.existsSync(FOLDER+user[0]["user_id"]+".png")) {
+        fs.writeFileSync(FOLDER+user[0]["user_id"]+extension, req.body);
+        return {"message":"OK", "status":200};
+    }
+
+    // File doesn't exist, status is 201
     fs.writeFileSync(FOLDER+user[0]["user_id"]+extension, req.body);
 
-    return {"message":"OK", "status":200};
+    return {"message":"Created", "status":201};
 };
