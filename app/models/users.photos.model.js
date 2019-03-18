@@ -14,13 +14,14 @@ const FOLDER = "app/user.photos/";
 exports.insert = async function(req) {
     const headers = req.headers;
     const body = req.body;
-    let auth = headers["x-authorisation"];
+    let auth = headers["x-authorization"];
     let id = req.params.id;
     let user;
     let extension;
 
     //Check authorisation
     if (typeof auth === "undefined" || auth === "" || auth === null) {
+        console.log("HELP ME!");
         throw AUTHERROR;
     } else {
         // Check user exists
