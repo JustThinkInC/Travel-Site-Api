@@ -21,7 +21,6 @@ exports.insert = async function(req) {
 
     //Check authorisation
     if (typeof auth === "undefined" || auth === "" || auth === null) {
-        console.log("HELP ME!");
         throw AUTHERROR;
     } else {
         // Check user exists
