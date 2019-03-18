@@ -33,9 +33,9 @@ exports.add = async function(req, res) {
 exports.get = async function(req, res) {
     try {
         let result = await Photos.view(req.params.id);
-        res.setHeader("Content-Type", result["content"]);
-        res.statusMessage = result["message"];
-        res.status(result["status"]);
+        res.setHeader("Content-Type", "image/"+result["content"]);
+        res.statusMessage = "OK";
+        res.status(200);
         res.json(result["image"]);
     } catch (err) {
         res.setHeader("Content-Type", "application/json");
