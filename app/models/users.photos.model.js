@@ -101,3 +101,30 @@ exports.view = async function(id) {
 
     return response;
 };
+
+
+// DELETE user photo
+exports.delete =  async function(req) {
+    let id = req.params.id;
+    let auth = req.headers["x-authorization"];
+
+    // Check auth token exists
+    if (typeof auth === "undefined" || auth === "" || auth === null) {
+        throw AUTHERROR;
+    }
+
+    // Check auth token matches user
+    let dbAuth = await db.getPool().query("SELECT * FROM User WHERE auth_token = ?", [auth]);
+    if (dbAuth[0]["user_id"] !== id) {
+        throw FORBIDDENERROR;
+    }
+
+    let photo = hasPhoto(id);
+    if (photo[0] === true) {
+        removePhoto(photo[0], photo[1]);
+    } else {
+        throw NOTFOUNDERROR;
+    }
+
+    return await db.getPool().query("UPDATE User SET profile_photo_filename = '' WHERE user_id = ?", [id]);
+};
