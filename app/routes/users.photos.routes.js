@@ -5,5 +5,5 @@ module.exports = function (app) {
     app.route(app.rootUrl + '/users/:id/photo')
         .get(photos.get)
         .put(photos.add)
-        .remove(photos.remove);
+        .delete(photos.remove);
 };
