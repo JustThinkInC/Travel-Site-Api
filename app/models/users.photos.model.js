@@ -10,17 +10,16 @@ const PNG = "image/png";
 const JPEG = "image/jpeg";
 const FOLDER = "app/user.photos/";
 
-// Check if a user has a profile photo
-// Returns file extension if so
-function hasPhoto(id) {
+// Returns file extension if user has photo
+function photoExension(id) {
 
     if (fs.existsSync(FOLDER+id+".jpeg")) {
-        return [true, ".jpeg"];
+        return ".jpeg";
     } else if (fs.existsSync(FOLDER+id+".png")) {
-        return [true, ".png"];
+        return ".png";
     }
 
-    return [false, null];
+    return null;
 }
 
 
@@ -62,15 +61,13 @@ exports.insert = async function(req) {
         throw BADREQUESTERROR;  //Invalid request
     }
 
-    let photoExists = hasPhoto(id);
-    let existsExtension = photoExists[1];
-    photoExists = photoExists[0];
+    let existsExtension = photoExension(id);
 
     // Set the filename of photo
     filename = user[0]["user_id"]+extension;
 
     // If file exists, status is 200
-    if (photoExists) {
+    if (existsExtension !== null) {
         removePhoto(id, existsExtension);
         fs.writeFileSync(FOLDER + filename, req.body);
         response = {"message":"OK", "status":200};
@@ -88,11 +85,9 @@ exports.insert = async function(req) {
 exports.view = async function(id) {
     let response = {"content":"png", "image":null};
 
-    let photoExists = hasPhoto(id);
-    let extension = photoExists[1];
-    photoExists = photoExists[0];
+    let extension = photoExension(id);
 
-    if (!photoExists) {
+    if (extension === null) {
         throw NOTFOUNDERROR;
     }
 
@@ -115,18 +110,17 @@ exports.delete =  async function(req) {
 
     // Check auth token matches user
     let dbAuth = await db.getPool().query("SELECT * FROM User WHERE auth_token = ?", [auth]);
-    let photo = hasPhoto(id);
+    let extension = photoExension(id);
 
-    // Check user exists if no photo found
-    if (!photo[0]) {
-        let userExist = await db.getPool().query("SELECT user_id FROM User WHERE user_id = ?", [id]);
-        if (typeof userExist[0] === "undefined") throw NOTFOUNDERROR;
+    // Check user exists if photo exists
+    if (!extension) {
+        throw NOTFOUNDERROR;
     } else if (typeof dbAuth[0] !== "undefined" && dbAuth[0]["user_id"] !== id) {   // Check authentication matches user
         throw FORBIDDENERROR;
     }
 
     // Delete the photo
-    removePhoto(id, photo[1]);
+    removePhoto(id, extension);
 
     return await db.getPool().query("UPDATE User SET profile_photo_filename = '' WHERE user_id = ?", [id]);
 };
