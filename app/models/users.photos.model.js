@@ -71,8 +71,8 @@ exports.insert = async function(req) {
 
     // If file exists, status is 200
     if (photoExists) {
-        fs.writeFileSync(FOLDER + filename, req.body);
         removePhoto(id, existsExtension);
+        fs.writeFileSync(FOLDER + filename, req.body);
         response = {"message":"OK", "status":200};
     }
 
@@ -93,7 +93,6 @@ exports.view = async function(id) {
     photoExists = photoExists[0];
 
     if (!photoExists) {
-        console.log(photoExists);
         throw NOTFOUNDERROR;
     }
 
