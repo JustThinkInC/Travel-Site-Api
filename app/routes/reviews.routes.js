@@ -8,5 +8,5 @@ module.exports = function (app) {
 
     // User reviews
     app.route(app.rootUrl + '/users/:id/reviews')
-       // .get(reviews.byUser);
+        .get(reviews.getUserReviews);
 };
