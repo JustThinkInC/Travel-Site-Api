@@ -18,6 +18,8 @@ exports.insert = async function(req) {
     let id = req.params.id;
     let user;
     let extension;
+    let filename;
+    let response = {"message":"Created", "status":201}; //Default response
 
     //Check authorisation
     if (typeof auth === "undefined" || auth === "" || auth === null) {
@@ -38,17 +40,20 @@ exports.insert = async function(req) {
     } else {
         throw BADREQUESTERROR;  //Invalid request
     }
+    // Set the filename of photo
+    filename = user[0]["user_id"]+extension;
 
     // If file exists, status is 200
-    if (fs.existsSync(FOLDER+user[0]["user_id"]+".jpeg") || fs.existsSync(FOLDER+user[0]["user_id"]+".png")) {
-        fs.writeFileSync(FOLDER+user[0]["user_id"]+extension, req.body);
-        return {"message":"OK", "status":200};
+    if (user[0]["profile_photo_filename"]) {
+        fs.writeFileSync(FOLDER + filename, req.body);
+        response = {"message":"OK", "status":200};
     }
 
     // File doesn't exist, status is 201
-    fs.writeFileSync(FOLDER+user[0]["user_id"]+extension, req.body);
+    fs.writeFileSync(FOLDER + filename, req.body);
+    await db.getPool().query("UPDATE User SET profile_photo_filename = ? WHERE user_id = ?", [[filename], [id]]);
 
-    return {"message":"Created", "status":201};
+    return response;
 };
 
 
@@ -56,14 +61,15 @@ exports.insert = async function(req) {
 exports.view = async function(id) {
     let response = {"content":"png", "image":null};
 
+    let user_photo = await db.getPool().query("SELECT profile_photo_filename FROM User WHERE user_id = ?", [id]);
+
+    user_photo = user_photo[0]["profile_photo_filename"];
+
     // If file exists, status is 200
-    if (fs.existsSync(FOLDER+id+".jpeg")) {
-        response["content"] = "jpeg";
-        response["image"] = fs.readFileSync(FOLDER+id+".jpeg");
-    } else if (fs.existsSync(FOLDER+id+".png")) {
-        response["image"] = fs.readFileSync(FOLDER+id+".png");
+    if (fs.existsSync(FOLDER+user_photo)) {
+        response["content"] = user_photo.split('.').pop();
+        response["image"] = fs.readFileSync(FOLDER + user_photo);
     } else {
-        console.log(fs.existsSync(FOLDER));
         throw NOTFOUNDERROR;
     }
 
