@@ -77,3 +77,40 @@ exports.viewReviews = async function(id) {
 
     return result;
 };
+
+
+// GET reviews authored by user
+exports.getUserReviews = async function(req) {
+    let id = req.params.id;
+    let auth = req.headers["x-authorisation"];
+    let result = [];
+
+    // Check for non-existing auth token
+    if (typeof auth === "undefined" || auth === null || auth === "") {
+        throw AUTHERROR;
+    } else {
+        // Check for invalid auth token
+        let authUser = await db.getPool().query("SELECT user_id FROM User WHERE auth_token = ?", [auth]);
+        if (typeof authUser[0] === "undefined") {
+            throw AUTHERROR;
+        }
+    }
+
+    let reviews = await db.getPool().query("SELECT * FROM Review WHERE review_author_id = ?", [id]);
+    let user = await db.getPool().query("SELECT user_name FROM User WHERE user_id = ?", [id]);
+
+    for (let i = 0; i < user.length && typeof user[i] !== "undefined"; i++) {
+        let venue = await db.getPool().query("SELECT * FROM Venue WHERE venue_id = ?", user[i]["reviewed_venue_id"]);
+        let venuePhoto = await db.getPool().query("SELECT photo_filename FROM VenuePhoto WHERE venue_id = ? " +
+            "AND is_primary = 1", [venue[0]["venue_id"]]);
+
+        result.push({"reviewAuthor":{"userId":id, "username":user[i]["user_name"]}, "reviewBody":reviews[i]["review_body"],
+                  "starRating":reviews[i]["star_rating"], "costRating":reviews[i]["cost_rating"],
+                  "timePosted":reviews[i]["time_posted"], "venue":{"venueId":reviews[i]["reviewed_venue_id"],
+                  "venueName":venue[0]["venue_name"], "categoryName":venues[0]["category_name"],
+                  "city":venue[0]["city"], "shortDescription":venue[0]["short_description"],
+                  "primaryPhoto":venuePhoto[0]["photo_filename"]}});
+    }
+
+    return result;
+};
