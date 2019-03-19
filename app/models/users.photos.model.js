@@ -91,7 +91,6 @@ exports.view = async function(id) {
     let photoExists = hasPhoto(id);
     let extension = photoExists[1];
     photoExists = photoExists[0];
-    photoExists = false;
 
     if (photoExists === true) {
         response["content"] = extension.substr(1);
