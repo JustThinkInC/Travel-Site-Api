@@ -63,6 +63,7 @@ exports.view = async function(id) {
     } else if (fs.existsSync(FOLDER+id+".png")) {
         response["image"] = fs.readFileSync(FOLDER+id+".png");
     } else {
+        console.log(fs.existsSync(FOLDER));
         throw NOTFOUNDERROR;
     }
 
