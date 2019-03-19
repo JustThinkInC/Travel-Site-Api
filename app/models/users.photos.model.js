@@ -115,10 +115,10 @@ exports.delete =  async function(req) {
     // Check user exists if photo exists
     if (!extension) {
         throw NOTFOUNDERROR;
-    } else if (typeof dbAuth[0] !== "undefined" && dbAuth[0]["user_id"] !== id) {   // Check authentication matches user
+    } else if (typeof dbAuth[0] !== "undefined" && dbAuth[0]["user_id"].toString() !== id.toString()) {   // Check authentication matches user
         throw FORBIDDENERROR;
     }
-
+    console.log(dbAuth[0]);
     // Delete the photo
     removePhoto(id, extension);
 
