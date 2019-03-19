@@ -115,16 +115,18 @@ exports.delete =  async function(req) {
 
     // Check auth token matches user
     let dbAuth = await db.getPool().query("SELECT * FROM User WHERE auth_token = ?", [auth]);
-    if (typeof dbAuth[0] !== "undefined" && dbAuth[0]["user_id"] !== id) {
+    let photo = hasPhoto(id);
+
+    // Check user exists if no photo found
+    if (!photo[0]) {
+        let userExist = await db.getPool().query("SELECT user_id FROM User WHERE user_id = ?", [id]);
+        if (typeof userExist[0]["user_id"] === "undefined") throw NOTFOUNDERROR;
+    } else if (typeof dbAuth[0] !== "undefined" && dbAuth[0]["user_id"] !== id) {   // Check authentication matches user
         throw FORBIDDENERROR;
     }
 
-    let photo = hasPhoto(id);
-    if (photo[0] === true) {
-        removePhoto(photo[0], photo[1]);
-    } else {
-        throw NOTFOUNDERROR;
-    }
+    // Delete the photo
+    removePhoto(photo[0], photo[1]);
 
     return await db.getPool().query("UPDATE User SET profile_photo_filename = '' WHERE user_id = ?", [id]);
 };
