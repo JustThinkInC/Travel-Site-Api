@@ -10,6 +10,27 @@ const PNG = "image/png";
 const JPEG = "image/jpeg";
 const FOLDER = "app/user.photos/";
 
+// Check if a user has a profile photo
+// Returns file extension if so
+function hasPhoto(id) {
+
+    if (fs.existsSync(FOLDER+id+".jpeg")) {
+        return [true, ".jpeg"];
+    } else if (fs.existsSync(FOLDER+id+".png")) {
+        return [true, ".png"];
+    }
+
+    return [false, null];
+}
+
+
+// Removes a user's profile photo from server storage
+// Does not affect database
+function removePhoto(id, extension) {
+    fs.unlinkSync(FOLDER+id+extension);
+}
+
+
 // PUT: add profile photo for user
 exports.insert = async function(req) {
     const headers = req.headers;
@@ -40,12 +61,18 @@ exports.insert = async function(req) {
     } else {
         throw BADREQUESTERROR;  //Invalid request
     }
+
+    let photoExists = hasPhoto(id);
+    let existsExtension = photoExists[1];
+    photoExists = photoExists[0];
+
     // Set the filename of photo
     filename = user[0]["user_id"]+extension;
 
     // If file exists, status is 200
-    if (typeof user[0] !== "undefined" && user[0]["profile_photo_filename"]) {
+    if (photoExists) {
         fs.writeFileSync(FOLDER + filename, req.body);
+        removePhoto(id, existsExtension);
         response = {"message":"OK", "status":200};
     }
 
@@ -61,12 +88,13 @@ exports.insert = async function(req) {
 exports.view = async function(id) {
     let response = {"content":"png", "image":null};
 
-    // If file exists, status is 200
-    if (fs.existsSync(FOLDER+id+".jpeg")) {
-        response["content"] = "jpeg";
-        response["image"] = fs.readFileSync(FOLDER+id+".jpeg");
-    } else if (fs.existsSync(FOLDER+id+".png")) {
-        response["image"] = fs.readFileSync(FOLDER + id + ".png");
+    let photoExists = hasPhoto(id);
+    let extension = photoExists[1];
+    photoExists = photoExists[0];
+
+    if (photoExists) {
+        response["content"] = extension.substr(1);
+        response["image"] = fs.readFileSync(FOLDER+id+extension);
     } else {
         throw NOTFOUNDERROR;
     }
