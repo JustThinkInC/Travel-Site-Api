@@ -36,7 +36,8 @@ exports.get = async function(req, res) {
         res.setHeader("Content-Type", "image/"+result["content"]);
         res.statusMessage = "OK";
         res.status(200);
-        res.json(result["image"]);
+        res.write(result["image"], "binary");
+        res.end(null, "binary");
     } catch (err) {
         res.setHeader("Content-Type", "application/json");
         res.statusMessage = "Not Found";
