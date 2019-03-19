@@ -1,25 +1,7 @@
 const db = require('../../config/db');
 const fs = require('mz/fs');
 
-const photoDirectory = './storage/photos/';
-
-exports.resetDB = async function () {
-    let promises = [];
-
-    const sql = await fs.readFile('app/resources/create_database.sql', 'utf8');
-    promises.push(db.getPool().query(sql));
-
-    if (await fs.exists(photoDirectory)) {
-        const files = await fs.readdir(photoDirectory);
-        for (const file of files) {
-            if (file !== 'default.png') {
-                promises.push(fs.unlink(photoDirectory + file));
-            }
-        }
-    }
-
-    return Promise.all(promises);  // async wait for DB recreation and photos to be deleted
-};
+const photoDirectory = ['app/user.photos/', 'app/venue.photos/'];
 
 exports.loadData = async function () {
     await populateDefaultUsers();
@@ -30,6 +12,26 @@ exports.loadData = async function () {
         console.log(err.sql);
         throw err;
     }
+};
+
+exports.resetDB = async function () {
+    let promises = [];
+
+    const sql = await fs.readFile('app/resources/create_database.sql', 'utf8');
+    promises.push(db.getPool().query(sql));
+
+    for (let i=0; i < photoDirectory.length; i++) {
+        if (await fs.exists(photoDirectory[i])) {
+            const files = await fs.readdir(photoDirectory[i]);
+            for (const file of files) {
+                if (file !== 'default.png') {
+                    promises.push(fs.unlink(photoDirectory[i]+ file));
+                }
+            }
+        }
+    }
+
+    return Promise.all(promises);  // async wait for DB recreation and photos to be deleted
 };
 
 /**
