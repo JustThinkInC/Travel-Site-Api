@@ -62,7 +62,7 @@ exports.view = async function(id) {
     let response = {"content":"png", "image":null};
 
     let user_photo = await db.getPool().query("SELECT profile_photo_filename FROM User WHERE user_id = ?", [id]);
-
+    console.log(user_photo);
     user_photo = user_photo[0]["profile_photo_filename"];
 
     // If file exists, status is 200
