@@ -115,7 +115,7 @@ exports.delete =  async function(req) {
 
     // Check auth token matches user
     let dbAuth = await db.getPool().query("SELECT * FROM User WHERE auth_token = ?", [auth]);
-    if (dbAuth[0]["user_id"] !== id) {
+    if (typeof dbAuth[0] !== "undefined" && dbAuth[0]["user_id"] !== id) {
         throw FORBIDDENERROR;
     }
 
