@@ -10,7 +10,7 @@ const PNG = "image/png";
 const JPEG = "image/jpeg";
 const FOLDER = "app/user.photos/";
 
-// POST: add a user to the database
+// PUT: add profile photo for user
 exports.insert = async function(req) {
     const headers = req.headers;
     const body = req.body;
@@ -57,7 +57,7 @@ exports.insert = async function(req) {
 };
 
 
-// POST: add a user to the database
+// GET: a user's profile photo
 exports.view = async function(id) {
     let response = {"content":"png", "image":null};
 
