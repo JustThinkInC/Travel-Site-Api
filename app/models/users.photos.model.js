@@ -33,9 +33,9 @@ exports.insert = async function(req) {
     }
 
     // Set extension of file to write
-    if (req.headers["content-type"] == PNG) {
+    if (req.headers["content-type"] === PNG) {
         extension = ".png";
-    } else if (req.headers["content-type"] == JPEG) {
+    } else if (req.headers["content-type"] === JPEG) {
         extension = ".jpeg";
     } else {
         throw BADREQUESTERROR;  //Invalid request
@@ -45,11 +45,10 @@ exports.insert = async function(req) {
 
     // If file exists, status is 200
     if (typeof user[0] !== "undefined" && user[0]["profile_photo_filename"]) {
-        console.log("PHOTO FOUND. OVERWRITING");
         fs.writeFileSync(FOLDER + filename, req.body);
         response = {"message":"OK", "status":200};
     }
-    console.log("AFTER IF " + response["status"]);
+
     // File doesn't exist, status is 201
     fs.writeFileSync(FOLDER + filename, req.body);
     await db.getPool().query("UPDATE User SET profile_photo_filename = ? WHERE user_id = ?", [[filename], [id]]);
@@ -62,24 +61,15 @@ exports.insert = async function(req) {
 exports.view = async function(id) {
     let response = {"content":"png", "image":null};
 
-    // let user_photo = await db.getPool().query("SELECT profile_photo_filename FROM User WHERE user_id = ?", [id]);
-    // console.log(user_photo);
-    // user_photo = user_photo[0]["profile_photo_filename"];
-
-
     // If file exists, status is 200
     if (fs.existsSync(FOLDER+id+".jpeg")) {
         response["content"] = "jpeg";
         response["image"] = fs.readFileSync(FOLDER+id+".jpeg");
-        console.log("GETTING JPEG")
     } else if (fs.existsSync(FOLDER+id+".png")) {
         response["image"] = fs.readFileSync(FOLDER + id + ".png");
-        console.log("GETTING PNG")
     } else {
         throw NOTFOUNDERROR;
     }
-
-    console.log("GET NO ERROR");
 
     return response;
 };
