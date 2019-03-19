@@ -95,9 +95,16 @@ exports.view = async function(id) {
     if (photoExists) {
         response["content"] = extension.substr(1);
         response["image"] = fs.readFileSync(FOLDER + id + extension);
+        console.log("GET " + id);
+        fs.readdir(FOLDER, (err, files) => {
+            files.forEach(file => {
+                console.log(file);
+            });
+        });
+
         return response;
     }
 
-    
+
     throw NOTFOUNDERROR;
 };
