@@ -94,10 +94,10 @@ exports.view = async function(id) {
 
     if (photoExists) {
         response["content"] = extension.substr(1);
-        response["image"] = fs.readFileSync(FOLDER+id+extension);
-    } else {
-        throw NOTFOUNDERROR;
+        response["image"] = fs.readFileSync(FOLDER + id + extension);
+        return response;
     }
 
-    return response;
+    
+    throw NOTFOUNDERROR;
 };
