@@ -1,5 +1,5 @@
 const db = require('../../config/db');
-const fs = require("fs");
+const fs = require("mz/fs");
 const AUTHERROR = {name:"Unauthorized", message:"Unauthorized"};
 const NOTFOUNDERROR = {name:"Not Found", message:"Not Found"};
 const FORBIDDENERROR = {name:"Forbidden", message:"Forbidden"};
@@ -14,7 +14,7 @@ exports.insert = async function(req) {
     let makePrimary = req.body["makePrimary"];
     let photoData = req.file;
     let user;
-    
+
     // If venue doesn't exist
     let venue = await db.getPool().query("SELECT venue_id FROM Venue WHERE venue_id = ?", [id]);
     if (typeof venue[0] === "undefined") throw NOTFOUNDERROR;
@@ -44,7 +44,7 @@ exports.insert = async function(req) {
     let newFileName = FOLDER + id + "_" + filename;
 
     // Save the file to the venue photos' folder
-    fs.writeFileSync(newFileName, binary);
+    await fs.writeFile(newFileName, binary);
 
     if (makePrimary === "true") {
         await db.getPool().query("UPDATE VenuePhoto SET is_primary = false WHERE is_primary = true");
@@ -64,4 +64,20 @@ exports.insert = async function(req) {
 
     return await db.getPool().query('INSERT INTO VenuePhoto(venue_id, photo_filename, photo_description, is_primary) ' +
                                     'VALUES ?', [[info]]);
+};
+
+
+
+// GET: a venue's photo by filename
+exports.view = async function(id, photoFileName) {
+    let response = {"content":"png", "image":null};
+    const storedName = FOLDER + id + "_" + photoFileName;
+    if (await fs.exists(storedName)) {
+        response["content"] = photoFileName.split(".").pop();
+        response["image"] = await fs.readFile(storedName);
+        return response;
+    }
+
+
+    throw NOTFOUNDERROR;
 };
