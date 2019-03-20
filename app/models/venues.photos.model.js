@@ -48,7 +48,11 @@ exports.insert = async function(req) {
     console.log(photoData);
 
     // Save the file to the venue photos' folder
-    fs.writeFileSync(newFileName, binary);
+    try {
+        fs.writeFileSync(newFileName, binary);
+    } catch (e) {
+        console.log(e);
+    }
 
     if (makePrimary === "true") {
         await db.getPool().query("UPDATE VenuePhoto SET is_primary = false WHERE is_primary = true");
