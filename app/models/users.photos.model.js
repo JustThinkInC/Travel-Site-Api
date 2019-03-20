@@ -1,5 +1,4 @@
 const db = require('../../config/db');
-const bodyParser = require("body-parser");
 const fs = require("fs");
 
 const AUTHERROR = {name:"Unauthorized", message:"Unauthorized"};
