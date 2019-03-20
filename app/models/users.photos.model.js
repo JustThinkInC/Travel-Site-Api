@@ -18,14 +18,14 @@ async function photoExension(id) {
         return ".png";
     }
 
-    return null;
+    return "null";
 }
 
 
 // Removes a user's profile photo from server storage
 // Does not affect database
 function removePhoto(id, extension) {
-    fs.unlink(FOLDER+id+extension);
+    fs.unlinkSync(FOLDER+id+extension);
 }
 
 
@@ -60,19 +60,17 @@ exports.insert = async function(req) {
         throw BADREQUESTERROR;  //Invalid request
     }
 
-    let existsExtension = photoExension(id);
+    let existsExtension = await photoExension(id);
+
+    // If file exists, status is 200
+    if (existsExtension !== "null") {
+        removePhoto(id, existsExtension);
+        response = {"message":"OK", "status":200};
+    }
 
     // Set the filename of photo
     filename = user[0]["user_id"]+extension;
 
-    // If file exists, status is 200
-    if (existsExtension !== null) {
-        removePhoto(id, existsExtension);
-        await fs.writeFile(FOLDER + filename, req.body);
-        response = {"message":"OK", "status":200};
-    }
-
-    // File doesn't exist, status is 201
     await fs.writeFile(FOLDER + filename, req.body);
     await db.getPool().query("UPDATE User SET profile_photo_filename = ? WHERE user_id = ?", [[filename], [id]]);
 
@@ -84,9 +82,9 @@ exports.insert = async function(req) {
 exports.view = async function(id) {
     let response = {"content":"png", "image":null};
 
-    let extension = photoExension(id);
+    let extension = await photoExension(id);
 
-    if (extension === null) {
+    if (extension === "null") {
         throw NOTFOUNDERROR;
     }
 
@@ -109,10 +107,10 @@ exports.delete =  async function(req) {
 
     // Check auth token matches user
     let dbAuth = await db.getPool().query("SELECT * FROM User WHERE auth_token = ?", [auth]);
-    let extension = photoExension(id);
+    let extension = await photoExension(id);
 
     // Check user exists if photo exists
-    if (!extension) {
+    if (extension === "null") {
         throw NOTFOUNDERROR;
     } else if (typeof dbAuth[0] !== "undefined" && dbAuth[0]["user_id"].toString() !== id.toString()) {   // Check authentication matches user
         throw FORBIDDENERROR;
