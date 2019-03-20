@@ -1,5 +1,5 @@
 const db = require('../../config/db');
-const fs = require("fs");
+const fs = require("mz/fs");
 
 const AUTHERROR = {name:"Unauthorized", message:"Unauthorized"};
 const NOTFOUNDERROR = {name:"Not Found", message:"Not Found"};
@@ -10,11 +10,11 @@ const JPEG = "image/jpeg";
 const FOLDER = "app/user.photos/";
 
 // Returns file extension if user has photo
-function photoExension(id) {
+async function photoExension(id) {
 
-    if (fs.existsSync(FOLDER+id+".jpeg")) {
+    if (await fs.exists(FOLDER+id+".jpeg")) {
         return ".jpeg";
-    } else if (fs.existsSync(FOLDER+id+".png")) {
+    } else if (await fs.exists(FOLDER+id+".png")) {
         return ".png";
     }
 
@@ -25,7 +25,7 @@ function photoExension(id) {
 // Removes a user's profile photo from server storage
 // Does not affect database
 function removePhoto(id, extension) {
-    fs.unlinkSync(FOLDER+id+extension);
+    fs.unlink(FOLDER+id+extension);
 }
 
 
@@ -68,12 +68,12 @@ exports.insert = async function(req) {
     // If file exists, status is 200
     if (existsExtension !== null) {
         removePhoto(id, existsExtension);
-        fs.writeFileSync(FOLDER + filename, req.body);
+        await fs.writeFile(FOLDER + filename, req.body);
         response = {"message":"OK", "status":200};
     }
 
     // File doesn't exist, status is 201
-    fs.writeFileSync(FOLDER + filename, req.body);
+    await fs.writeFile(FOLDER + filename, req.body);
     await db.getPool().query("UPDATE User SET profile_photo_filename = ? WHERE user_id = ?", [[filename], [id]]);
 
     return response;
@@ -91,7 +91,7 @@ exports.view = async function(id) {
     }
 
     response["content"] = extension.substr(1);
-    response["image"] = fs.readFileSync(FOLDER + id + extension);
+    response["image"] = await fs.readFile(FOLDER + id + extension);
 
     return response;
 };
