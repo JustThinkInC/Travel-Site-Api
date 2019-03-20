@@ -24,6 +24,7 @@ exports.add = async function(req, res) {
                 break;
             case "Not Found":
                 res.status(404);
+                break;
             default:
                 res.statusMessage = "Bad Request";
                 res.status(400);
