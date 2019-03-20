@@ -14,6 +14,10 @@ exports.insert = async function(req) {
     let makePrimary = req.body["makePrimary"];
     let photoData = req.file;
     let user;
+    
+    // If venue doesn't exist
+    let venue = await db.getPool().query("SELECT venue_id FROM Venue WHERE venue_id = ?", [id]);
+    if (typeof venue[0] === "undefined") throw NOTFOUNDERROR;
 
     // Bad request if no photo
     if (typeof photoData === "undefined") throw BADREQUESTERROR;
@@ -30,10 +34,6 @@ exports.insert = async function(req) {
     // Check user exists for auth token
     user = await db.getPool().query("SELECT * FROM User WHERE auth_token = ?", [auth]);
     if (typeof user[0] === "undefined") throw AUTHERROR;
-
-    // If venue doesn't exist
-    let venue = await db.getPool().query("SELECT venue_id FROM Venue WHERE venue_id = ?", [id]);
-    if (typeof venue[0] === "undefined") throw NOTFOUNDERROR;
 
     // Check user is admin
     const admin = await db.getPool().query("SELECT admin_id FROM Venue WHERE venue_id = ?", [id]);
