@@ -20,6 +20,9 @@ exports.insert = async function(req) {
     // Bad request if no photo
     if (typeof photoData === "undefined") throw BADREQUESTERROR;
 
+    console.log(description);
+    console.log("BODY DESC"+req.body["description"]);
+
     // Check valid description and make primary fields
     if (typeof description === "undefined" || description === null) throw BADREQUESTERROR;
     console.log("23");
