@@ -12,6 +12,7 @@
     "dotenv": "^6.2.0",
     "express": "^4.16.4",
     "fs": "0.0.1-security",
+    "multer": "^1.4.1",
     "mz": "^2.7.0",
     "promise-mysql": "^3.3.1"
   }
