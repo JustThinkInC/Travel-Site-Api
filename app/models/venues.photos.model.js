@@ -10,18 +10,13 @@ const FOLDER = "app/venue.photos/";
 exports.insert = async function(req) {
     const auth = req.headers["x-authorization"];
     const id = req.params.id;
-    const description = req.body["description\n"];
-    let makePrimary = req.body["makePrimary\n"];
+    const description = req.body["description"];
+    let makePrimary = req.body["makePrimary"];
     let photoData = req.file;
     let user;
 
-    console.log(photoData);
-
     // Bad request if no photo
     if (typeof photoData === "undefined") throw BADREQUESTERROR;
-
-    console.log(description);
-    console.log("BODY DESC"+req.body["description"]);
 
     // Check valid description and make primary fields
     if (typeof description === "undefined" || description === null) throw BADREQUESTERROR;
