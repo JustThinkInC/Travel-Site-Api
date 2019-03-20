@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "SENG365 2019: Travel Site API"
-  version: 1.0.1
+  version: 1.0.2
   description: "This specification documents the API that must be implemented for Assignment One. \n\nThe API provides all of the server-side functionality necessary in order to implement the user stories for Assignment Two."
 servers:
   - url: http://csse-s365.canterbury.ac.nz:4001/api/v1
@@ -35,7 +35,7 @@ paths:
       tags:
         - venues
       summary: View venues.
-      description: The `distance` field (from the user\'s location to the venue) is only included in the results when `myLatitude` and `myLongitude` parameters are provided.
+      description: "The default direction for each sort order should be: \n* STAR_RATING: highest to lowest \n* COST_RATING: lowest to highest \n* DISTANCE: lowest to highest \n\nThe `distance` field (from the user's location to the venue) is only included in the results when `myLatitude` and `myLongitude` parameters are provided. Sorting by distance should return a 400 if the myLatitude and myLongitude parameters are not provided. \n\nThe list should be filtered, then sorted, then paginated using `startIndex` and `count`."
       parameters:
         - in: query
           name: startIndex
@@ -396,6 +396,10 @@ paths:
                   $ref: '#/components/schemas/Review/properties/starRating'
                 costRating:
                   $ref: '#/components/schemas/Review/properties/costRating'
+              required:
+                - reviewBody
+                - starRating
+                - costRating
       responses:
         201:
           description: Created
@@ -405,6 +409,8 @@ paths:
           description: Unauthorized
         403:
           description: Forbidden
+        404:
+          description: Not Found
   
   /users/{id}/reviews:
     parameters:
