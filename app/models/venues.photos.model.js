@@ -15,6 +15,8 @@ exports.insert = async function(req) {
     let photoData = req.file;
     let user;
 
+    console.log(photoData);
+
     // Bad request if no photo
     if (typeof photoData === "undefined") throw BADREQUESTERROR;
 
