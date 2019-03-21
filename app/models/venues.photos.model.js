@@ -59,7 +59,6 @@ exports.insert = async function(req) {
         makePrimary = 1;
     }
 
-
     let info = [id, newFileName.substring(FOLDER.length).toString(), description.toString(), makePrimary];
 
     return await db.getPool().query('INSERT INTO VenuePhoto(venue_id, photo_filename, photo_description, is_primary) ' +
@@ -73,11 +72,11 @@ exports.view = async function(id, photoFileName) {
     let response = {"content":"png", "image":null};
     const storedName = FOLDER + id + "_" + photoFileName;
     if (await fs.exists(storedName)) {
-        response["content"] = photoFileName.split(".").pop();
+        let extension = photoFileName.split(".").pop();
+        response["content"] = (extension === "jpg") ? "jpeg" : extension;
         response["image"] = await fs.readFile(storedName);
         return response;
     }
-
 
     throw NOTFOUNDERROR;
 };
