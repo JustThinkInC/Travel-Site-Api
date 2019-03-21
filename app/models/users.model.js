@@ -29,8 +29,8 @@ exports.insert = async function(body) {
     }
 
     // Hash password
-    let salt = bcrypt.genSaltSync(12);
-    let hash = bcrypt.hashSync(body.password, salt);
+    let salt = await bcrypt.genSalt(12);
+    let hash = await bcrypt.hash(body.password, salt);
 
     // Replace plaint text password with hash
     info[info.length - 1] = hash;
