@@ -2,10 +2,10 @@ const Venues = require('../models/venues.model');
 
 // GET all data
 exports.view = function(req, res) {
-    let values = [req.params.startIndex, req.params.count, req.params.city,
-                  req.params.q, req.params.catergoryId, req.params.minStarRating,
-                  req.params.maxCostRating, req.params.adminId, req.params.sortBy,
-                  req.params.reverseSort, req.params.myLatitude, req.params.myLongitude]
+    let values = [req.query.startIndex, req.query.count, req.query.city,
+                  req.query.q, req.query.catergoryId, req.query.minStarRating,
+                  req.query.maxCostRating, req.query.adminId, req.query.sortBy,
+                  req.query.reverseSort, req.query.myLatitude, req.query.myLongitude]
     Venues.getAll(values,function(result) {
         res.json(result);
     });
