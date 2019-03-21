@@ -75,15 +75,24 @@ async function getCosts() {
 }
 
 
+function removeEmpty(list) {
+    let filtered = {};
+    for(let key in list) {
+        if (typeof list[key] !== "undefined") filtered[key] = list[key];
+    }
+
+    return filtered;
+}
+
 // GET /venues
 exports.getAll = async function(values) {
     let query = [];
     let latitude =10;
     let longitude = 20;
     let result = [];
+    let filtered = removeEmpty(values);
 
-    
-    if (values.length === 0) {
+    if (Object.keys(filtered).length === 0) {
         let venues = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude," +
             " longitude FROM Venue");
 
@@ -105,42 +114,16 @@ exports.getAll = async function(values) {
                     "distance":getDistance(venues[i]["latitude"], latitude, venues[i]["longitude"], longitude)}
             )
         }
-    }
-    return result;
-    for (let i = 0; i < values.length; i++) {
-        //if (typeof values[i] === "undefined")
+
+        return result;
     }
 
-    let startIndex = values[0];
-    let count = values[1];
-    let city = values[2];
-    let q = values[3];
-    let categoryId = values[4];
-    let minStarRating = values[5];
-    let maxCostRating = values[6];
-    let adminId = values[7];
-    let sortBy = values[8];
-    let reverseSort = values[9];
-    let myLatitude = values[10];
-    let myLongitude = values[11];
 
-    if (typeof values[2] !== undefined) {
-        query.push("city = ?");
-    }
-    if (typeof values[4] !== undefined) {
-        query.push("category_id = ?");
-    }
-    if (typeof values[7] !== undefined) {
-        query.push("admin_id = ?");
-    }
-    if (typeof values[10] !== undefined) {
-        query.push("latitude = ?");
-    }
-    if (typeof values[11] !== undefined) {
-        query.push("longitude = ?");
-    }
+    throw unimplemented;
+    
+    let qSearch = filtered["q"];
+    if (typeof qSearch !== "undefined") delete filtered[q];
 
-    query = (query.length) ? query.join (' AND ') : '1';
     console.log(query);
     // db.getPool().query("SELECT * FROM Venue WHERE (@city IS NULL OR city=?) " +
     //     "AND (@category_id IS NULL OR category_id=?) " +
