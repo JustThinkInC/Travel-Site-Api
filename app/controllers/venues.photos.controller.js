@@ -54,7 +54,7 @@ exports.get = async function(req, res) {
 // DELETE a venue's photo
 exports.remove = async function(req, res) {
     try {
-        let result = await Photos.insert(req);
+        let result = await Photos.delete(req);
         res.setHeader("Content-Type", "application/json");
         res.statusMessage = "OK";
         res.status(200);

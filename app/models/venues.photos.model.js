@@ -10,8 +10,8 @@ const FOLDER = "app/venue.photos/";
 exports.insert = async function(req) {
     const auth = req.headers["x-authorization"];
     const id = req.params.id;
-    const description = req.body["description"];
-    let makePrimary = req.body["makePrimary"];
+    const description = req.body["description\n"];
+    let makePrimary = req.body["makePrimary\n"];
     let photoData = req.file;
     let user;
 
@@ -84,18 +84,19 @@ exports.view = async function(id, photoFileName) {
 
 // DELETE a venue's photo by filename
 exports.delete = async function(req) {
-    const auth = req.headers["x-authorisation"];
+    const auth = req.headers["x-authorization"];
     const id = req.params.id;
     const photoFileName = req.params.photoFilename;
     const storedName = FOLDER + id + "_" + photoFileName;
+
     if (!await fs.exists(storedName)) {
         throw NOTFOUNDERROR;
-    } else if (typeof auth === "undefined") {
+    } else if (typeof auth === "undefined" || auth === null) {
         throw AUTHERROR;
     }
 
     // Check venue exists
-    const venueExists = await db.getPool().query("SELECT venue_id, admin_id FROM Venue WHERE id = ?" ,[id]);
+    const venueExists = await db.getPool().query("SELECT venue_id, admin_id FROM Venue WHERE venue_id = ?" ,[id]);
     if (typeof venueExists[0] === "undefined") throw NOTFOUNDERROR;
 
     // Check user is admin of venue
