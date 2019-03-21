@@ -120,9 +120,9 @@ exports.getAll = async function(values) {
 
 
     throw unimplemented;
-    
+
     let qSearch = filtered["q"];
-    if (typeof qSearch !== "undefined") delete filtered[q];
+    if (typeof qSearch !== "undefined") delete filtered["q"];
 
     console.log(query);
     // db.getPool().query("SELECT * FROM Venue WHERE (@city IS NULL OR city=?) " +
