@@ -2,12 +2,25 @@ const Venues = require('../models/venues.model');
 
 // GET all data
 exports.view = async function(req, res) {
-    let values = [req.query.startIndex, req.query.count, req.query.city,
-                  req.query.q, req.query.catergoryId, req.query.minStarRating,
-                  req.query.maxCostRating, req.query.adminId, req.query.sortBy,
-                  req.query.reverseSort, req.query.myLatitude, req.query.myLongitude];
-    let result = await Venues.getAll([]);
-    res.json(result);
+    try {
+        let values = {
+            "startIndex": req.query.startIndex, "count": req.query.count, "city": req.query.city, "q": req.query.q,
+            "categoryId": req.query.catergoryId, "minStarRating": req.query.minStarRating,
+            "maxCostRating": req.query.maxCostRating, "adminId": req.query.adminId, "sortBy": req.query.sortBy,
+            "reverseSort": req.query.reverseSort, "latitude": req.query.myLatitude, "longitude": req.query.myLongitude
+        };
+        let result = await Venues.getAll(values);
+        res.setHeader("Content-Type", "application/json");
+        res.statusMessage = "OK";
+        res.status(200);
+        res.json(result);
+    } catch (err) {
+        console.log(err)
+        res.setHeader("Content-Type", "application/json");
+        res.statusMessage = "Bad Request";
+        res.status(400);
+        res.json();
+    }
 };
 
 // POST add a venue
