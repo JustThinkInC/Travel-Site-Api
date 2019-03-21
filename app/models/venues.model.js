@@ -4,7 +4,7 @@ const unimplemented = {"Error" : "Unimplemented"};  // Unimplemented error messa
 const AUTHERROR = {name:"Unauthorized", message:"Unauthorized"};
 const NOTFOUNDERROR = {name:"Not Found", message:"Not Found"};
 const FORBIDDENERROR = {name:"Forbidden", message:"Forbidden"};
-
+const BADREQUESTERROR = {name:"Bad Request", message:"Bad Request"};
 
 /**
  * Convert degrees to Radians
@@ -87,10 +87,13 @@ function removeEmpty(list) {
 // GET /venues
 exports.getAll = async function(values) {
     let query = [];
-    let latitude =10;
-    let longitude = 20;
     let result = [];
     let filtered = removeEmpty(values);
+    let latitude = filtered["latitude"];
+    let longitude = filtered["longitude"];
+
+    let starRating = filtered["minStarRating"];
+    if (typeof filtered["minStarRating"] !== "undefined" && (starRating > 5 || starRating < 0)) throw BADREQUESTERROR;
 
     if (Object.keys(filtered).length === 0) {
         let venues = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude," +
@@ -108,10 +111,12 @@ exports.getAll = async function(values) {
                     "categoryId":venues[i]["category_id"], "city":venues[i]["city"],
                     "shortDescription":venues[i]["short_description"], "latitude":venues[i]["latitude"],
                     "longitude": venues[i]["longitude"],
-                    "meanStarRating":starRatings[0]["average"],
+                    "meanStarRating": (starRatings[0]["average"] !== null) ? starRatings[0]["average"] : undefined,
                     "modeCostRating":costs[venues[i]["venue_id"]],
                     "primaryPhoto":photos[venues[i]["venue_id"]],
-                    "distance":getDistance(venues[i]["latitude"], latitude, venues[i]["longitude"], longitude)}
+                    "distance":
+                        (typeof latitude !== "undefined" && typeof longitude !== "undefined") ?
+                            getDistance(venues[i]["latitude"], latitude, venues[i]["longitude"], longitude) : undefined}
             )
         }
 
@@ -123,17 +128,16 @@ exports.getAll = async function(values) {
 
     let qSearch = filtered["q"];
     if (typeof qSearch !== "undefined") delete filtered["q"];
+    let startIndex = (typeof filtered["startIndex"] !== "undefined") ? filtered["startIndex"] : 0;
+    let dbRes;
+    if (qSearch) {
+        dbRes = await db.getPool().query("SELECT * FROM Venue WHERE ? LIKE ?", [filtered, qSearch]);
+    } else {
+        dbRes = await db.getPool().query("SELECT * FROM Venue WHERE ?", [filtered]);
+    }
 
-    console.log(query);
-    // db.getPool().query("SELECT * FROM Venue WHERE (@city IS NULL OR city=?) " +
-    //     "AND (@category_id IS NULL OR category_id=?) " +
-    //     "AND (@admin_id IS NULL OR admin_id=?) " +
-    //     "AND (@latitude IS NULL OR latitude=?) " +
-    //     "AND (@longitude IS NULL or longitude=?)", city, categoryId, adminId, myLatitude, myLongitude, function(err, rows) {
-    db.getPool().query("SELECT * FROM Venue WHERE ?" + query, [values[2], values[4], values[7], values[10], values[11]],function(err, rows) {
-        if (err) return done(err);
-        done(rows);
-    });
+
+    return result.slice(startIndex);
 };
 
 
