@@ -120,7 +120,7 @@ exports.getVenue = async function(id) {
 
     for (let i = 0; typeof venuePhotos[i] !== "undefined"; i++) {
         photos.push({"photoFilename":venuePhotos[i]["photo_filename"].substr(2),
-            "photoDescription":venuePhotos[i]["photo_description"], "isPrimary":venuePhotos[i]["is_primary"] === 0})
+            "photoDescription":venuePhotos[i]["photo_description"], "isPrimary":venuePhotos[i]["is_primary"] === 1})
     }
     console.log(photos);
     // Return all information as JSON
