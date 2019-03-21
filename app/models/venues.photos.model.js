@@ -10,8 +10,8 @@ const FOLDER = "app/venue.photos/";
 exports.insert = async function(req) {
     const auth = req.headers["x-authorization"];
     const id = req.params.id;
-    const description = req.body["description\n"];
-    let makePrimary = req.body["makePrimary\n"];
+    const description = req.body["description"];
+    let makePrimary = req.body["makePrimary"];
     let photoData = req.file;
     let user;
 
