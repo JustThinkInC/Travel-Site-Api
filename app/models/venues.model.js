@@ -113,11 +113,21 @@ exports.getVenue = async function(id) {
     delete categoryInfo["category_name"];
     delete categoryInfo["category_description"];
 
+    let venuePhotos = await db.getPool().query("SELECT photo_filename, photo_description, is_primary FROM VenuePhoto " +
+                                                "WHERE venue_id = ?", [id]);
+
+    let photos = [];
+
+    for (let i = 0; typeof venuePhotos[i] !== "undefined"; i++) {
+        photos.push({"photoFilename":venuePhotos[i]["photo_filename"].substr(2),
+            "photoDescription":venuePhotos[i]["photo_description"], "isPrimary":venuePhotos[i]["is_primary"] === 0})
+    }
+    console.log(photos);
     // Return all information as JSON
     return {"venueName":venueJSON["venue_name"], "admin":adminInfo, "category":categoryInfo, "city":venueJSON["city"],
             "shortDescription":venueJSON["short_description"], "longDescription":venueJSON["long_description"],
             "dateAdded":venueJSON["date_added"], "address":venueJSON["address"], "latitude":venueJSON["latitude"],
-        "longitude":venueJSON["longitude"]}
+        "longitude":venueJSON["longitude"], "photos":photos};
 };
 
 // PATCH (update) specific venue
