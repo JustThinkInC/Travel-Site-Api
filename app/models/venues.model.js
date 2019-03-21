@@ -48,29 +48,65 @@ function getDistance(lat1, lat2, lon1, lon2) {
 }
 
 
-// GET /venues
-exports.getAll = async function(values, done) {
-    let query = [];
+// Get all primary photos
+async function getPrimaryPhotos() {
+    let primaryPhotos = await db.getPool().query("SELECT venue_id, photo_filename FROM VenuePhoto WHERE is_primary = 1");
+    let photos = {};
+    for (let i = 0; typeof primaryPhotos[i] !== "undefined"; i ++) {
+        let photo_id = primaryPhotos[i]["venue_id"];
+        photos[photo_id] = primaryPhotos[i]["photo_filename"].substr(2);
+    }
 
+
+    return photos;
+}
+
+
+// Get all mode cost ratings
+async function getCosts() {
+    let costRatings = await db.getPool().query("SELECT * FROM ModeCostRating");
+    let costs = {};
+    for (let i = 0; typeof costRatings[i] !== "undefined"; i ++) {
+        let venue_id = costRatings[i]["venue_id"];
+        costs[venue_id] = costRatings[i]["mode_cost_rating"];
+    }
+
+    return costs;
+}
+
+
+// GET /venues
+exports.getAll = async function(values) {
+    let query = [];
+    let latitude =10;
+    let longitude = 20;
+    let result = [];
+
+    
     if (values.length === 0) {
         let venues = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude," +
             " longitude FROM Venue");
-        let primaryPhotos = await db.getPool().query("SELECT venue_id, photo_filename WHERE is_primary = 1");
-        let costRatings = await db.getPool().query("SELECT * FROM ModeCostRating");
-        //TODO: Get avg star rating for each venue
-        //let starRatings =
-        let result = []
+
+        let costs = await getCosts();
+        let photos = await getPrimaryPhotos();
+
         for(let i=0; typeof venues[i] !== "undefined"; i++) {
+            let starRatings = await db.getPool().query("SELECT AVG(star_rating) AS average FROM Review WHERE reviewed_venue_id = ?",
+                [venues[i]["venue_id"]]);
+
             result.push(
                 {"venueId":venues[i]["venue_id"], "venueName":venues[i]["venue_name"],
                     "categoryId":venues[i]["category_id"], "city":venues[i]["city"],
                     "shortDescription":venues[i]["short_description"], "latitude":venues[i]["latitude"],
-                    "longitude": venues[i]["longitude"], "primaryPhoto":primaryPhotos[i]["photo_filename"].substr(2),
+                    "longitude": venues[i]["longitude"],
+                    "meanStarRating":starRatings[0]["average"],
+                    "modeCostRating":costs[venues[i]["venue_id"]],
+                    "primaryPhoto":photos[venues[i]["venue_id"]],
                     "distance":getDistance(venues[i]["latitude"], latitude, venues[i]["longitude"], longitude)}
             )
         }
     }
-
+    return result;
     for (let i = 0; i < values.length; i++) {
         //if (typeof values[i] === "undefined")
     }
