@@ -80,3 +80,36 @@ exports.view = async function(id, photoFileName) {
 
     throw NOTFOUNDERROR;
 };
+
+
+// DELETE a venue's photo by filename
+exports.delete = async function(req) {
+    const auth = req.headers["x-authorisation"];
+    const id = req.params.id;
+    const photoFileName = req.params.photoFilename;
+    const storedName = FOLDER + id + "_" + photoFileName;
+    if (!await fs.exists(storedName)) {
+        throw NOTFOUNDERROR;
+    } else if (typeof auth === "undefined") {
+        throw AUTHERROR;
+    }
+
+    // Check venue exists
+    const venueExists = await db.getPool().query("SELECT venue_id, admin_id FROM Venue WHERE id = ?" ,[id]);
+    if (typeof venueExists[0] === "undefined") throw NOTFOUNDERROR;
+
+    // Check user is admin of venue
+    const user = await db.getPool().query("SELECT user_id FROM User WHERE auth_token = ?", [auth]);
+    if (typeof user[0] === "undefined" || user[0]["user_id"] !== venueExists[0]["admin_id"]) throw FORBIDDENERROR;
+
+    //Check if photo is primary
+    const isPrimary = await db.getPool().query("SELECT is_primary FROM VenuePhoto WHERE venue_id = ? AND " +
+                                                "photo_filename = ?", [id, photoFileName]);
+
+    if (typeof isPrimary !== "undefined" && isPrimary === 1) {
+        await db.getPool().query("UPDATE is_primary = 1 WHERE venue_id = ? LIMIT 1", [id]);
+    }
+
+    await fs.unlink(storedName);
+    return await db.getPool("DELETE FROM VenuePhoto WHERE venue_id = ? AND photo_filename = ?", [id, photoFileName]);
+};
