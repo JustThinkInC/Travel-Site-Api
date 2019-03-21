@@ -5,20 +5,88 @@ const AUTHERROR = {name:"Unauthorized", message:"Unauthorized"};
 const NOTFOUNDERROR = {name:"Not Found", message:"Not Found"};
 const FORBIDDENERROR = {name:"Forbidden", message:"Forbidden"};
 
-exports.getAll = function(values, done) {
+
+/**
+ * Convert degrees to Radians
+ * @param deg
+ * @returns {number}
+ */
+function toRadians(deg) {
+    return deg * (Math.PI/180)
+}
+
+
+/**
+ * Get distance between two latitude, longitude coordinates
+ * Based on the Haversine formula of:
+ *      a = sin²(Δφ/2) + cos φ1 ⋅ cos φ2 ⋅ sin²(Δλ/2)
+ *      c = 2 ⋅ atan2( √a, √(1−a) )
+ *      d = R ⋅ c
+ * Where φ is latitude, λ is longitude, R is earth’s radius in KM (6371)
+ * @param lat1 First latitude coordinate
+ * @param lat2 Second latitude coordinate
+ * @param lon1 First longitude coordinate
+ * @param lon2 Second longitude coordinate
+ * @returns {number} Distance in KM
+ */
+function getDistance(lat1, lat2, lon1, lon2) {
+    const earthRadius = 6371; // Radius of the earth in km
+
+    // Change in latitude and longitude
+    let deltaLat = toRadians(lat2-lat1);
+    let deltaLon = toRadians(lon2-lon1);
+
+    let a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+        Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+    let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    // Distance in KM
+    let distance = earthRadius * c;
+
+
+    return distance;
+}
+
+
+// GET /venues
+exports.getAll = async function(values, done) {
     let query = [];
-    // let startIndex = values[0];
-    // let count = values[1];
-    // let city = values[2];
-    // let q = values[3];
-    // let categoryId = values[4];
-    // let minStarRating = values[5];
-    // let maxCostRating = values[6];
-    // let adminId = values[7];
-    // let sortyBy = values[8];
-    // let reverseSort = values[9];
-    // let myLatitude = values[10];
-    // let myLongitude = values[11];
+
+    if (values.length === 0) {
+        let venues = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude," +
+            " longitude FROM Venue");
+        let primaryPhotos = await db.getPool().query("SELECT venue_id, photo_filename WHERE is_primary = 1");
+        let costRatings = await db.getPool().query("SELECT * FROM ModeCostRating");
+        //TODO: Get avg star rating for each venue
+        //let starRatings =
+        let result = []
+        for(let i=0; typeof venues[i] !== "undefined"; i++) {
+            result.push(
+                {"venueId":venues[i]["venue_id"], "venueName":venues[i]["venue_name"],
+                    "categoryId":venues[i]["category_id"], "city":venues[i]["city"],
+                    "shortDescription":venues[i]["short_description"], "latitude":venues[i]["latitude"],
+                    "longitude": venues[i]["longitude"], "primaryPhoto":primaryPhotos[i]["photo_filename"].substr(2),
+                    "distance":getDistance(venues[i]["latitude"], latitude, venues[i]["longitude"], longitude)}
+            )
+        }
+    }
+
+    for (let i = 0; i < values.length; i++) {
+        //if (typeof values[i] === "undefined")
+    }
+
+    let startIndex = values[0];
+    let count = values[1];
+    let city = values[2];
+    let q = values[3];
+    let categoryId = values[4];
+    let minStarRating = values[5];
+    let maxCostRating = values[6];
+    let adminId = values[7];
+    let sortBy = values[8];
+    let reverseSort = values[9];
+    let myLatitude = values[10];
+    let myLongitude = values[11];
 
     if (typeof values[2] !== undefined) {
         query.push("city = ?");
