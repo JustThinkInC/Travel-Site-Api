@@ -1,14 +1,13 @@
 const Venues = require('../models/venues.model');
 
 // GET all data
-exports.view = function(req, res) {
+exports.view = async function(req, res) {
     let values = [req.query.startIndex, req.query.count, req.query.city,
                   req.query.q, req.query.catergoryId, req.query.minStarRating,
                   req.query.maxCostRating, req.query.adminId, req.query.sortBy,
-                  req.query.reverseSort, req.query.myLatitude, req.query.myLongitude]
-    Venues.getAll(values,function(result) {
-        res.json(result);
-    });
+                  req.query.reverseSort, req.query.myLatitude, req.query.myLongitude];
+    let result = await Venues.getAll([]);
+    res.json(result);
 };
 
 // POST add a venue
