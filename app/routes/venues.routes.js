@@ -3,8 +3,8 @@ const venues = require('../controllers/venues.controller');
 module.exports = function (app) {
     // General venues
     app.route(app.rootUrl + '/venues')
-
-        .post(venues.add);//.get(venues.view)
+        .get(venues.view)
+        .post(venues.add);
 
     // Specific venue
     app.route(app.rootUrl + '/venues/:id')
