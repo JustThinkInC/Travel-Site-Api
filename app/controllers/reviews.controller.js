@@ -37,7 +37,6 @@ exports.view = async function(req, res) {
         res.status(200);
         res.json(result);
     } catch (err) {
-        console.log(err)
         res.setHeader("Content-Type", "application/json");
         res.statusMessage = "Not Found";
         res.status(404);
