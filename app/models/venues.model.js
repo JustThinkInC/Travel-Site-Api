@@ -201,11 +201,11 @@ exports.getAll = async function(values) {
             qSearch = `AND venue_name LIKE '%${qSearch}%'`;
         }
         console.log(query+qSearch);
-        dbRes = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude, longitude" +
+        dbRes = await db.getPool().query("SELECT Venue.venue_id, venue_name, category_id, city, short_description, latitude, longitude" +
             " FROM Venue, Review, ModeCostRating " + query + " " + qSearch);
     } else {
         console.log(query);
-        dbRes = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude, longitude" +
+        dbRes = await db.getPool().query("SELECT Venue.venue_id, venue_name, category_id, city, short_description, latitude, longitude" +
             " FROM Venue, Review, ModeCostRating " + query);
     }
 
