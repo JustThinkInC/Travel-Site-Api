@@ -206,8 +206,8 @@ exports.getAll = async function(values) {
     console.log(query+qSearch);
     dbRes =  await db.getPool().query("SELECT Venue.venue_id, venue_name, category_id, city, short_description, latitude, longitude" +
             " FROM Venue, Review, ModeCostRating " + query + " " + qSearch);
-    if (typeof count === "undefined") count = dbRes.length;
-    for (let i=0; typeof dbRes[i] !== "undefined" && i < count; i++) {
+    //if (typeof count === "undefined") count = dbRes.length;
+    for (let i=0; typeof dbRes[i] !== "undefined" && i !== count; i++) {
         let starRatings = await db.getPool().query("SELECT AVG(star_rating) AS average FROM Review WHERE reviewed_venue_id = ?",
             [dbRes[i]["venue_id"]]);
         result.push({
