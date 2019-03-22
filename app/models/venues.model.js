@@ -154,10 +154,10 @@ exports.getAll = async function(values) {
     }
     if (typeof filtered["maxCostRating"] !== "undefined") {
         if (firstCondition) {
-            query.push(`WHERE cost_rating <= ${filtered["maxCostRating"]}`);
+            query.push(`WHERE mode_cost_rating <= ${filtered["maxCostRating"]}`);
             firstCondition = false;
         } else {
-            query.push(`AND cost_rating <= ${filtered["maxCostRating"]}`);
+            query.push(`AND mode_cost_rating <= ${filtered["maxCostRating"]}`);
         }
         delete filtered["maxCostRating"];
     }
@@ -202,11 +202,11 @@ exports.getAll = async function(values) {
         }
         console.log(query+qSearch);
         dbRes = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude, longitude" +
-            " FROM Venue, Review " + query + " " + qSearch);
+            " FROM Venue, Review, ModeCostRating " + query + " " + qSearch);
     } else {
         console.log(query);
         dbRes = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude, longitude" +
-            " FROM Venue, Review " + query);
+            " FROM Venue, Review, ModeCostRating " + query);
     }
 
     for (let i=0; typeof dbRes[i] !== "undefined"; i++) {
