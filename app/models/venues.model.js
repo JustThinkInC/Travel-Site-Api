@@ -148,13 +148,13 @@ exports.getAll = async function(values) {
     // Build up the SQL query
     let firstCondition = true;
     if (typeof filtered["minStarRating"] !== "undefined") {
-        query.push(`star_rating >= ${filtered["minStarRating"]}`);
+        query.push(`WHERE star_rating >= ${filtered["minStarRating"]}`);
         firstCondition = false;
         delete filtered["minStarRating"];
     }
     if (typeof filtered["maxCostRating"] !== "undefined") {
         if (firstCondition) {
-            query.push(`cost_rating <= ${filtered["maxCostRating"]}`);
+            query.push(`WHERE cost_rating <= ${filtered["maxCostRating"]}`);
             firstCondition = false;
         } else {
             query.push(`AND cost_rating <= ${filtered["maxCostRating"]}`);
@@ -163,7 +163,7 @@ exports.getAll = async function(values) {
     }
     if (typeof filtered["city"] !== "undefined") {
         if (firstCondition) {
-            query.push(`city = '${filtered["city"]}'`);
+            query.push(`WHERE city = '${filtered["city"]}'`);
             firstCondition = false;
         } else {
             query.push(`AND city = '${filtered["city"]}'`);
@@ -177,7 +177,7 @@ exports.getAll = async function(values) {
             query.push(`AND ${key} = ${filtered[key]}`);
         } else {
             firstCondition = false;
-            query.push(`${key} = ${filtered[key]}`);
+            query.push(`WHERE ${key} = ${filtered[key]}`);
         }
     }
 
@@ -195,12 +195,16 @@ exports.getAll = async function(values) {
     console.log(query);
     let dbRes;
     if (qSearch) {
-        qSearch = `'%${qSearch}%'`;
+        if (firstCondition) {
+            qSearch = `WHERE venue_name LIKE '%${qSearch}%'`;
+        } else {
+            qSearch = `AND venue_name LIKE '%${qSearch}%'`;
+        }
         dbRes = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude, longitude" +
-            " FROM Venue, Review WHERE " + query + " AND venue_name LIKE " + qSearch);
+            " FROM Venue, Review " + query + " " + qSearch);
     } else {
         dbRes = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude, longitude" +
-            " FROM Venue, Review WHERE " + query);
+            " FROM Venue, Review " + query);
     }
 
     for (let i=0; typeof dbRes[i] !== "undefined"; i++) {
