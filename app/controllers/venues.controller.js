@@ -5,7 +5,7 @@ exports.view = async function(req, res) {
     try {
         let values = {
             "startIndex": req.query.startIndex, "count": req.query.count, "city": req.query.city, "q": req.query.q,
-            "categoryId": req.query.catergoryId, "minStarRating": req.query.minStarRating,
+            "categoryId": req.query.categoryId, "minStarRating": req.query.minStarRating,
             "maxCostRating": req.query.maxCostRating, "adminId": req.query.adminId, "sortBy": req.query.sortBy,
             "reverseSort": req.query.reverseSort, "latitude": req.query.myLatitude, "longitude": req.query.myLongitude
         };

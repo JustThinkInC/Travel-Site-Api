@@ -144,6 +144,10 @@ exports.getAll = async function(values) {
         filtered["admin_id"] = filtered["adminId"];
         delete filtered["adminId"];
     }
+    if (typeof filtered["categoryId"] !== "undefined") {
+        filtered["category_id"] = filtered["categoryId"];
+        delete filtered["categoryId"];
+    }
 
     // Build up the SQL query
     let firstCondition = true;
@@ -171,7 +175,7 @@ exports.getAll = async function(values) {
         delete filtered["city"];
     }
 
-
+    console.log(filtered)
     for (let key in filtered) {
         if (!firstCondition) {
             query.push(`AND ${key} = ${filtered[key]}`);
@@ -216,7 +220,7 @@ exports.getAll = async function(values) {
     console.log(dbRes);
 
     if (typeof count === "undefined") count = dbRes.length;
-    for (let i=0; typeof dbRes[i] !== "undefined" && i <= count; i++) {
+    for (let i = 0; typeof dbRes[i] !== "undefined" && i <= count; i++) {
         let starRatings = await db.getPool().query("SELECT AVG(star_rating) AS average FROM Review WHERE reviewed_venue_id = ?",
             [dbRes[i]["venue_id"]]);
         result.push({
@@ -235,9 +239,7 @@ exports.getAll = async function(values) {
 
     console.log("COUNT " + count)
     console.log(result);
-    // if (startIndex >= result.length) {
-    //     return result;
-    // }
+
     return result.slice(startIndex);
 };
 
