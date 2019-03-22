@@ -226,9 +226,9 @@ exports.getAll = async function(values) {
         });
     }
 
-    result = result.slice(startIndex, count);
-    console.log(result);
-    return result;
+    let resizedResult = result.slice(startIndex, count);
+
+    return resizedResult;
 };
 
 
