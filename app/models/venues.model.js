@@ -181,6 +181,16 @@ exports.getAll = async function(values) {
         }
     }
 
+
+    let dbRes;
+    if (qSearch) {
+        if (firstCondition) {
+            query.push(`WHERE venue_name LIKE '%${qSearch}%'`);
+        } else {
+            query.push(`AND venue_name LIKE '%${qSearch}%'`);
+        }
+    }
+
     if (typeof sortBy !== "undefined") {
         if (sortBy.toLowerCase() === "distance") {
             if (typeof latitude === "undefined" || typeof longitude === "undefined") throw globals.BADREQUESTERROR;
@@ -192,21 +202,20 @@ exports.getAll = async function(values) {
     }
 
     query = query.join(" ");
-
-    let dbRes;
-    if (qSearch) {
-        if (firstCondition) {
-            qSearch = `WHERE venue_name LIKE '%${qSearch}%'`;
-        } else {
-            qSearch = `AND venue_name LIKE '%${qSearch}%'`;
-        }
-    } else {
-        qSearch = "";
-    }
     console.log(query+qSearch);
-    dbRes =  await db.getPool().query("SELECT Venue.venue_id, venue_name, category_id, city, short_description, latitude, longitude" +
-            " FROM Venue, Review, ModeCostRating " + query + " " + qSearch);
-    //if (typeof count === "undefined") count = dbRes.length;
+
+    dbRes =  await db.getPool().query(
+        "SELECT DISTINCT V.venue_id, V.venue_name, V.category_id, V.city, V.short_description, V.latitude, V.longitude " +
+        "FROM Venue V INNER JOIN Review R " +
+            "ON V.venue_id = R.reviewed_venue_id " +
+        "INNER JOIN ModeCostRating M " +
+            "ON R.reviewed_venue_id = M.venue_id "
+        + query );
+
+    console.log(dbRes.length);
+    console.log(dbRes);
+
+    if (typeof count === "undefined") count = dbRes.length;
     for (let i=0; typeof dbRes[i] !== "undefined" && i <= count; i++) {
         let starRatings = await db.getPool().query("SELECT AVG(star_rating) AS average FROM Review WHERE reviewed_venue_id = ?",
             [dbRes[i]["venue_id"]]);
