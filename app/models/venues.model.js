@@ -224,7 +224,9 @@ exports.getAll = async function(values) {
         });
     }
 
-    return result.slice(startIndex, count);
+    result = result.slice(startIndex, count);
+    console.log(result);
+    return result;
 };
 
 
