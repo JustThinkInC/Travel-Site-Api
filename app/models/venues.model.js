@@ -140,8 +140,10 @@ exports.getAll = async function(values) {
     if (typeof filtered["sortBy"] !== "undefined") delete filtered["sortBy"];
 
     // Change keys to snake_case
-    filtered["admin_id"] = filtered["adminId"];
-    if (typeof filtered["adminId"] !== "undefined") delete filtered["adminId"];
+    if (typeof filtered["adminId"] !== "undefined") {
+        filtered["admin_id"] = filtered["adminId"];
+        delete filtered["adminId"];
+    }
 
     // Build up the SQL query
     let firstCondition = true;
@@ -158,6 +160,15 @@ exports.getAll = async function(values) {
             query.push(`AND cost_rating <= ${filtered["maxCostRating"]}`);
         }
         delete filtered["maxCostRating"];
+    }
+    if (typeof filtered["city"] !== "undefined") {
+        if (firstCondition) {
+            query.push(`city = '${filtered["city"]}'`);
+            firstCondition = false;
+        } else {
+            query.push(`AND city = '${filtered["city"]}'`);
+        }
+        delete filtered["city"];
     }
 
 
