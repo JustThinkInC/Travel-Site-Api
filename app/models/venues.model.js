@@ -154,11 +154,8 @@ exports.insert = async function(headers, body) {
     for (let i = 1; i < info.length; i++) {
            if (typeof info[i] === "undefined" || info[i] === '') throw globals.BADREQUESTERROR;
     }
-
     // Ensure latitude/longitude are in valid ranges
-    if (!(-90 <= info["latitude"] && info["latitude"] <= 90 || -180 <= info["longitude"] && info["longitude"] <= 180)) {
-        throw globals.BADREQUESTERROR;
-    }
+    if (! (-90 <= info[8] && info[8] <= 90 && -180 <= info[9] && info[9] <= 180)) throw globals.BADREQUESTERROR;
 
     // Check categoryId exists
     const categoryId = (await db.getPool().query("SELECT * FROM VenueCategory WHERE category_id = ?", [info[2]]))[0];
