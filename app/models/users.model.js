@@ -138,7 +138,7 @@ exports.patchUser = async function(req) {
     // Check information exists
     for(let key in info) {
         if (typeof info[key] === "undefined" || info[key] === null) delete info[key];
-        if (key == "password" && typeof info[key] === "number") throw globals.BADREQUESTERROR;
+        if (key.toString() === "password" && typeof info[key] === "number") throw globals.BADREQUESTERROR;
         if (info[key] === '') throw globals.BADREQUESTERROR;
     }
 

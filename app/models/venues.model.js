@@ -156,7 +156,9 @@ exports.insert = async function(headers, body) {
     }
 
     // Ensure latitude/longitude are in valid ranges
-    if (! (-90 <= info["latitude"] <= 90 || -180 <= info["longitude"] <= 180)) throw globals.BADREQUESTERROR;
+    if (!(-90 <= info["latitude"] && info["latitude"] <= 90 || -180 <= info["longitude"] && info["longitude"] <= 180)) {
+        throw globals.BADREQUESTERROR;
+    }
 
     // Check categoryId exists
     const categoryId = (await db.getPool().query("SELECT * FROM VenueCategory WHERE category_id = ?", [info[2]]))[0];
