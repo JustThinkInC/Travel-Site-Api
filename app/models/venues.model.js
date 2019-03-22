@@ -87,15 +87,19 @@ exports.getAll = async function(values) {
     let latitude = filtered["latitude"];
     let longitude = filtered["longitude"];
 
+    if (typeof latitude !== "undefined") delete filtered["latitude"];
+    if (typeof longitude !== "undefined") delete filtered["longitude"];
+
     let starRating = filtered["minStarRating"];
     if (typeof filtered["minStarRating"] !== "undefined" && (starRating > 5 || starRating < 0)) throw globals.BADREQUESTERROR;
+
+    let costs = await getCosts();
+    let photos = await getPrimaryPhotos();
 
     if (Object.keys(filtered).length === 0) {
         let venues = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude," +
             " longitude FROM Venue");
 
-        let costs = await getCosts();
-        let photos = await getPrimaryPhotos();
 
         for(let i=0; typeof venues[i] !== "undefined"; i++) {
             let starRatings = await db.getPool().query("SELECT AVG(star_rating) AS average FROM Review WHERE reviewed_venue_id = ?",
@@ -119,20 +123,93 @@ exports.getAll = async function(values) {
     }
 
 
-    throw globals.UNIMPLEMENTED;
+    //throw globals.UNIMPLEMENTED;
 
+    // Get the non-SQL query params
     let qSearch = filtered["q"];
+    let startIndex = filtered["startIndex"];
+    let count = filtered["count"];
+    let reverseSort = filtered["reverseSort"];
+    let sortBy = filtered["sortBy"];
+
+    // Remove the non-SQL query params if they exist
     if (typeof qSearch !== "undefined") delete filtered["q"];
-    let startIndex = (typeof filtered["startIndex"] !== "undefined") ? filtered["startIndex"] : 0;
-    let dbRes;
-    if (qSearch) {
-        dbRes = await db.getPool().query("SELECT * FROM Venue WHERE ? LIKE ?", [filtered, qSearch]);
-    } else {
-        dbRes = await db.getPool().query("SELECT * FROM Venue WHERE ?", [filtered]);
+    if (typeof filtered["startIndex"] !== "undefined") delete filtered["startIndex"];
+    if (typeof filtered["count"] !== "undefined") delete filtered["count"];
+    if (typeof filtered["reverseSort"] !== "undefined") delete filtered["reverseSort"];
+    if (typeof filtered["sortBy"] !== "undefined") delete filtered["sortBy"];
+
+    // Change keys to snake_case
+    filtered["admin_id"] = filtered["adminId"];
+    if (typeof filtered["adminId"] !== "undefined") delete filtered["adminId"];
+
+    // Build up the SQL query
+    let firstCondition = true;
+    if (typeof filtered["minStarRating"] !== "undefined") {
+        query.push(`star_rating >= ${filtered["minStarRating"]}`);
+        firstCondition = false;
+        delete filtered["minStarRating"];
+    }
+    if (typeof filtered["maxCostRating"] !== "undefined") {
+        if (firstCondition) {
+            query.push(`cost_rating <= ${filtered["maxCostRating"]}`);
+            firstCondition = false;
+        } else {
+            query.push(`AND cost_rating <= ${filtered["maxCostRating"]}`);
+        }
+        delete filtered["maxCostRating"];
     }
 
 
-    return result.slice(startIndex);
+    for (let key in filtered) {
+        if (!firstCondition) {
+            query.push(`AND ${key} = ${filtered[key]}`);
+        } else {
+            firstCondition = false;
+            query.push(`${key} = ${filtered[key]}`);
+        }
+    }
+
+    if (typeof sortBy !== "undefined") {
+        if (sortBy.toLowerCase() === "distance") {
+            if (typeof latitude === "undefined" || typeof longitude === "undefined") throw globals.BADREQUESTERROR;
+        } else {
+            query.push(`ORDER BY ${sortBy}`);
+        }
+    } else {
+        query.push("ORDER BY star_rating");
+    }
+
+    query = query.join(" ");
+    console.log(query);
+    let dbRes;
+    if (qSearch) {
+        qSearch = `'%${qSearch}%'`;
+        dbRes = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude, longitude" +
+            " FROM Venue, Review WHERE " + query + " AND venue_name LIKE " + qSearch);
+    } else {
+        dbRes = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude, longitude" +
+            " FROM Venue, Review WHERE " + query);
+    }
+
+    for (let i=0; typeof dbRes[i] !== "undefined"; i++) {
+        let starRatings = await db.getPool().query("SELECT AVG(star_rating) AS average FROM Review WHERE reviewed_venue_id = ?",
+            [dbRes[i]["venue_id"]]);
+        result.push({
+            "venueId":dbRes[i]["venue_id"], "venueName":dbRes[i]["venue_name"],
+            "categoryId":dbRes[i]["category_id"], "city":dbRes[i]["city"],
+            "shortDescription":dbRes[i]["short_description"], "latitude":dbRes[i]["latitude"],
+            "longitude": dbRes[i]["longitude"],
+            "meanStarRating": (starRatings[0]["average"] !== null) ? starRatings[0]["average"] : undefined,
+            "modeCostRating":costs[dbRes[i]["venue_id"]],
+            "primaryPhoto":photos[dbRes[i]["venue_id"]],
+            "distance":
+                (typeof latitude !== "undefined" && typeof longitude !== "undefined") ?
+                    getDistance(dbRes[i]["latitude"], latitude, dbRes[i]["longitude"], longitude) : undefined
+        });
+    }
+
+    return result.slice(startIndex, count);
 };
 
 
@@ -166,6 +243,7 @@ exports.insert = async function(headers, body) {
         "long_description, date_added, address, latitude, longitude) VALUES (?)", [info]);
 
 };
+
 
 // GET specific venue
 exports.getVenue = async function(id) {
