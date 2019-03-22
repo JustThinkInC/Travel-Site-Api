@@ -192,7 +192,7 @@ exports.getAll = async function(values) {
     }
 
     query = query.join(" ");
-    console.log(query);
+
     let dbRes;
     if (qSearch) {
         if (firstCondition) {
@@ -200,9 +200,11 @@ exports.getAll = async function(values) {
         } else {
             qSearch = `AND venue_name LIKE '%${qSearch}%'`;
         }
+        console.log(query+qSearch);
         dbRes = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude, longitude" +
             " FROM Venue, Review " + query + " " + qSearch);
     } else {
+        console.log(query);
         dbRes = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude, longitude" +
             " FROM Venue, Review " + query);
     }
