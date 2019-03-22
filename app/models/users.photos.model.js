@@ -1,10 +1,7 @@
 const db = require('../../config/db');
 const fs = require("mz/fs");
+const globals = require('../../config/constants');
 
-const AUTHERROR = {name:"Unauthorized", message:"Unauthorized"};
-const NOTFOUNDERROR = {name:"Not Found", message:"Not Found"};
-const FORBIDDENERROR = {name:"Forbidden", message:"Forbidden"};
-const BADREQUESTERROR = {name:"Bad Request", message:"Bad Request"};
 const PNG = "image/png";
 const JPEG = "image/jpeg";
 const FOLDER = "app/user.photos/";
@@ -42,13 +39,13 @@ exports.insert = async function(req) {
 
     //Check authorisation
     if (typeof auth === "undefined" || auth === "" || auth === null) {
-        throw AUTHERROR;
+        throw globals.AUTHERROR;
     } else {
         // Check user exists
         user = await db.getPool().query("SELECT * FROM User WHERE user_id = ?", [id]);
-        if (typeof user[0] === "undefined") throw NOTFOUNDERROR;
+        if (typeof user[0] === "undefined") throw globals.NOTFOUNDERROR;
         // If user is not same as logged in, operation is forbidden
-        if (user[0]["auth_token"] !== auth) throw FORBIDDENERROR;
+        if (user[0]["auth_token"] !== auth) throw globals.FORBIDDENERROR;
     }
 
     // Set extension of file to write
@@ -57,7 +54,7 @@ exports.insert = async function(req) {
     } else if (req.headers["content-type"] === JPEG) {
         extension = ".jpeg";
     } else {
-        throw BADREQUESTERROR;  //Invalid request
+        throw globals.BADREQUESTERROR;  //Invalid request
     }
 
     let existsExtension = await photoExension(id);
@@ -85,7 +82,7 @@ exports.view = async function(id) {
     let extension = await photoExension(id);
 
     if (extension === "null") {
-        throw NOTFOUNDERROR;
+        throw globals.NOTFOUNDERROR;
     }
 
     response["content"] = extension.substr(1);
@@ -102,7 +99,7 @@ exports.delete =  async function(req) {
 
     // Check auth token exists
     if (typeof auth === "undefined" || auth === "" || auth === null) {
-        throw AUTHERROR;
+        throw globals.AUTHERROR;
     }
 
     // Check auth token matches user
@@ -111,9 +108,9 @@ exports.delete =  async function(req) {
 
     // Check user exists if photo exists
     if (extension === "null") {
-        throw NOTFOUNDERROR;
+        throw globals.NOTFOUNDERROR;
     } else if (typeof dbAuth[0] !== "undefined" && dbAuth[0]["user_id"].toString() !== id.toString()) {   // Check authentication matches user
-        throw FORBIDDENERROR;
+        throw globals.FORBIDDENERROR;
     }
     
     // Delete the photo

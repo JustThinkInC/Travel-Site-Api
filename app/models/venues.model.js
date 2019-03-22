@@ -1,10 +1,5 @@
 const db = require('../../config/db');
-
-const unimplemented = {"Error" : "Unimplemented"};  // Unimplemented error message in JSON
-const AUTHERROR = {name:"Unauthorized", message:"Unauthorized"};
-const NOTFOUNDERROR = {name:"Not Found", message:"Not Found"};
-const FORBIDDENERROR = {name:"Forbidden", message:"Forbidden"};
-const BADREQUESTERROR = {name:"Bad Request", message:"Bad Request"};
+const globals = require('../../config/constants');
 
 /**
  * Convert degrees to Radians
@@ -93,7 +88,7 @@ exports.getAll = async function(values) {
     let longitude = filtered["longitude"];
 
     let starRating = filtered["minStarRating"];
-    if (typeof filtered["minStarRating"] !== "undefined" && (starRating > 5 || starRating < 0)) throw BADREQUESTERROR;
+    if (typeof filtered["minStarRating"] !== "undefined" && (starRating > 5 || starRating < 0)) throw globals.BADREQUESTERROR;
 
     if (Object.keys(filtered).length === 0) {
         let venues = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude," +
@@ -124,7 +119,7 @@ exports.getAll = async function(values) {
     }
 
 
-    throw unimplemented;
+    throw globals.UNIMPLEMENTED;
 
     let qSearch = filtered["q"];
     if (typeof qSearch !== "undefined") delete filtered["q"];
@@ -145,11 +140,11 @@ exports.getAll = async function(values) {
 exports.insert = async function(headers, body) {
     // Check if authorization exists
     let auth = headers["x-authorization"];
-    if (auth === '' || typeof auth === "undefined" || auth === null) throw AUTHERROR;
+    if (auth === '' || typeof auth === "undefined" || auth === null) throw globals.AUTHERROR;
 
     // Validate token exists
     let user = (await db.getPool().query("SELECT user_id, auth_token FROM User WHERE auth_token = ?", [auth]))[0];
-    if (typeof user === "undefined" || user["auth_token"] === null || typeof user["auth_token"] === "undefined") throw AUTHERROR;
+    if (typeof user === "undefined" || user["auth_token"] === null || typeof user["auth_token"] === "undefined") throw globals.AUTHERROR;
 
     // Construct info array
     let info = [user["user_id"], body.venueName, body.categoryId, body.city, body.shortDescription, body.longDescription,
@@ -157,16 +152,16 @@ exports.insert = async function(headers, body) {
 
     // Check no value is null or undefined
     for (let i = 1; i < info.length; i++) {
-           if (typeof info[i] === "undefined" || info[i] === '') throw ("Missing field");
+           if (typeof info[i] === "undefined" || info[i] === '') throw globals.BADREQUESTERROR;
     }
 
     // Ensure latitude/longitude are in valid ranges
-    if (! (-90 <= info["latitude"] <= 90 || -180 <= info["longitude"] <= 180)) throw ("Invalid latitude or longitude");
+    if (! (-90 <= info["latitude"] <= 90 || -180 <= info["longitude"] <= 180)) throw globals.BADREQUESTERROR;
 
     // Check categoryId exists
     const categoryId = (await db.getPool().query("SELECT * FROM VenueCategory WHERE category_id = ?", [info[2]]))[0];
 
-    if (typeof categoryId === "undefined") throw ("Invalid category");
+    if (typeof categoryId === "undefined") throw globals.BADREQUESTERROR;
 
     return await db.getPool().query("INSERT INTO Venue(admin_id, venue_name, category_id, city, short_description, " +
         "long_description, date_added, address, latitude, longitude) VALUES (?)", [info]);
@@ -230,14 +225,14 @@ exports.patchVenue = async function(req) {
 
     // Check authorisation
     if (typeof auth === "undefined" || auth === "" || auth === null) {
-        throw AUTHERROR;
+        throw globals.AUTHERROR;
     } else {
         venue = await db.getPool().query("SELECT * FROM Venue WHERE venue_id = ?", [id]);
-        if (typeof venue[0] === "undefined") throw NOTFOUNDERROR;
+        if (typeof venue[0] === "undefined") throw globals.NOTFOUNDERROR;
         // Get user id of person attempting authorization
         let user = await db.getPool().query("SELECT user_id FROM User WHERE auth_token = ?", [auth]);
         // If user is not admin, operation is forbidden
-        if (typeof user[0] === "undefined" || user[0]["user_id"] !== venue[0]["admin_id"]) throw FORBIDDENERROR;
+        if (typeof user[0] === "undefined" || user[0]["user_id"] !== venue[0]["admin_id"]) throw globals.FORBIDDENERROR;
     }
 
     // Updated information
@@ -250,7 +245,7 @@ exports.patchVenue = async function(req) {
         if (typeof info[key] === "undefined" || info[key] === null) delete info[key];
     }
 
-    if (Object.keys(info).length === 0) throw {name:"Bad Request", message:"Bad Request"};
+    if (Object.keys(info).length === 0) throw globals.BADREQUESTERROR;
 
     return await db.getPool().query("UPDATE Venue SET ? WHERE venue_id = ?", [info, id]);
 };

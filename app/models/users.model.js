@@ -1,20 +1,12 @@
 const db = require('../../config/db');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const AUTHERROR = {name:"Unauthorized", message:"Unauthorized"};
-const NOTFOUNDERROR = {name:"Not Found", message:"Not Found"};
-const FORBIDDENERROR = {name:"Forbidden", message:"Forbidden"};
-const BADREQUESTERROR = {name:"Bad Request", message:"Bad Request"};
-
-const WORKLOAD = 12; // Workload for BCrypt salt
-
-const unimplemented = {"Error" : "Unimplemented"};
-
+const WORKLOAD = 5;
+const globals = require('../../config/constants');
 
 // POST: add a user to the database
 exports.insert = async function(body) {
     let info = [body.username, body.email, body.givenName, body.familyName, body.password];
-
     // Check for non passed values
     for(let i=0; i < info.length; i++) {
         if (typeof info[i] === "undefined") throw ("Missing field");
@@ -29,7 +21,7 @@ exports.insert = async function(body) {
     }
 
     // Hash password
-    let salt = await bcrypt.genSalt(12);
+    let salt = await bcrypt.genSalt(WORKLOAD);
     let hash = await bcrypt.hash(body.password, salt);
 
     // Replace plaint text password with hash
@@ -73,9 +65,9 @@ exports.authorise = async function(body) {
         const token = crypto.randomBytes(16).toString('hex');
         // Save token to database
         await db.getPool().query("UPDATE User SET auth_token = ? WHERE user_id = ?", [token, userId]);
-
         return {"userId" : userId, "token" : token};
     }
+
     throw ("Invalid login");
 };
 
@@ -85,13 +77,13 @@ exports.logout = async function(headers) {
     const token = headers["x-authorization"];
 
     // Check token exists
-    if (token === 'undefined' || token === '' || token === null) throw ("Missing authorisation token");
-
+    if (token === 'undefined' || token === '' || token === null) throw globals.AUTHERROR;
     // Delete token if it is found
     const rows = await db.getPool().query('UPDATE User SET auth_token = "" WHERE auth_token = ?', [token]);
-
     // If no rows have been changed, then no one was logged in
-    if (rows["affectedRows"] === 0) throw ("Token does not match any users");
+    if (rows["affectedRows"] === 0) throw globals.AUTHERROR;
+
+
     return;
 };
 
@@ -130,13 +122,13 @@ exports.patchUser = async function(req) {
 
     // Check authorisation
     if (typeof auth === "undefined" || auth === "" || auth === null) {
-        throw AUTHERROR;
+        throw globals.AUTHERROR;
     } else {
         // Check user exists
         user = await db.getPool().query("SELECT * FROM User WHERE user_id = ?", [id]);
-        if (typeof user[0] === "undefined") throw NOTFOUNDERROR;
+        if (typeof user[0] === "undefined") throw globalsNOTFOUNDERROR;
         // If user is not same as logged in, operation is forbidden
-        if (typeof user[0] === "undefined" || user[0]["auth_token"] !== auth) throw FORBIDDENERROR;
+        if (typeof user[0] === "undefined" || user[0]["auth_token"] !== auth) throw globals.FORBIDDENERROR;
     }
 
     // Updated information
@@ -146,11 +138,11 @@ exports.patchUser = async function(req) {
     // Check information exists
     for(let key in info) {
         if (typeof info[key] === "undefined" || info[key] === null) delete info[key];
-        if (key == "password" && typeof info[key] === "number") throw BADREQUESTERROR;
-        if (info[key] === '') throw BADREQUESTERROR;
+        if (key == "password" && typeof info[key] === "number") throw globals.BADREQUESTERROR;
+        if (info[key] === '') throw globals.BADREQUESTERROR;
     }
 
-    if (Object.keys(info).length === 0) throw BADREQUESTERROR;
+    if (Object.keys(info).length === 0) throw globals.BADREQUESTERROR;
 
     return await db.getPool().query("UPDATE User SET ? WHERE user_id = ?", [info, id]);
 };

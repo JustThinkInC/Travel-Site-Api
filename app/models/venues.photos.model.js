@@ -1,9 +1,6 @@
 const db = require('../../config/db');
 const fs = require("mz/fs");
-const AUTHERROR = {name:"Unauthorized", message:"Unauthorized"};
-const NOTFOUNDERROR = {name:"Not Found", message:"Not Found"};
-const FORBIDDENERROR = {name:"Forbidden", message:"Forbidden"};
-const BADREQUESTERROR = {name:"Bad Request", message:"Bad Request"};
+const globals = require('../../config/constants');
 const FOLDER = "app/venue.photos/";
 
 // POST: add photo for venue
@@ -17,27 +14,27 @@ exports.insert = async function(req) {
 
     // If venue doesn't exist
     let venue = await db.getPool().query("SELECT venue_id FROM Venue WHERE venue_id = ?", [id]);
-    if (typeof venue[0] === "undefined") throw NOTFOUNDERROR;
+    if (typeof venue[0] === "undefined") throw globals.NOTFOUNDERROR;
 
     // Bad request if no photo
-    if (typeof photoData === "undefined") throw BADREQUESTERROR;
+    if (typeof photoData === "undefined") throw globals.BADREQUESTERROR;
 
     // Check valid description and make primary fields
-    if (typeof description === "undefined" || description === null) throw BADREQUESTERROR;
-    if (typeof makePrimary === "undefined" || !(makePrimary !== "true "|| makePrimary !== "false")) throw BADREQUESTERROR;
+    if (typeof description === "undefined" || description === null) throw globals.BADREQUESTERROR;
+    if (typeof makePrimary === "undefined" || !(makePrimary !== "true "|| makePrimary !== "false")) throw globals.BADREQUESTERROR;
 
     //Check authorisation
     if (typeof auth === "undefined" || auth === "" || auth === null) {
-        throw AUTHERROR;
+        throw globals.AUTHERROR;
     }
 
     // Check user exists for auth token
     user = await db.getPool().query("SELECT * FROM User WHERE auth_token = ?", [auth]);
-    if (typeof user[0] === "undefined") throw AUTHERROR;
+    if (typeof user[0] === "undefined") throw globals.AUTHERROR;
 
     // Check user is admin
     const admin = await db.getPool().query("SELECT admin_id FROM Venue WHERE venue_id = ?", [id]);
-    if (typeof admin[0] === "undefined" || admin[0]["admin_id"] !== user[0]["user_id"]) throw FORBIDDENERROR;
+    if (typeof admin[0] === "undefined" || admin[0]["admin_id"] !== user[0]["user_id"]) throw globals.FORBIDDENERROR;
 
     let binary = photoData["buffer"];   // Photo file binary
     let filename = photoData["originalname"]; // Note this contains the extension of the file
@@ -78,7 +75,7 @@ exports.view = async function(id, photoFileName) {
         return response;
     }
 
-    throw NOTFOUNDERROR;
+    throw globals.NOTFOUNDERROR;
 };
 
 
@@ -90,18 +87,18 @@ exports.delete = async function(req) {
     const storedName = FOLDER + id + "_" + photoFileName;
 
     if (!await fs.exists(storedName)) {
-        throw NOTFOUNDERROR;
+        throw globals.NOTFOUNDERROR;
     } else if (typeof auth === "undefined" || auth === null) {
-        throw AUTHERROR;
+        throw globals.AUTHERROR;
     }
 
     // Check venue exists
     const venueExists = await db.getPool().query("SELECT venue_id, admin_id FROM Venue WHERE venue_id = ?" ,[id]);
-    if (typeof venueExists[0] === "undefined") throw NOTFOUNDERROR;
+    if (typeof venueExists[0] === "undefined") throw globals.NOTFOUNDERROR;
 
     // Check user is admin of venue
     const user = await db.getPool().query("SELECT user_id FROM User WHERE auth_token = ?", [auth]);
-    if (typeof user[0] === "undefined" || user[0]["user_id"] !== venueExists[0]["admin_id"]) throw FORBIDDENERROR;
+    if (typeof user[0] === "undefined" || user[0]["user_id"] !== venueExists[0]["admin_id"]) throw globals.FORBIDDENERROR;
 
     //Check if photo is primary
     const isPrimary = await db.getPool().query("SELECT is_primary FROM VenuePhoto WHERE venue_id = ? AND " +
