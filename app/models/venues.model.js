@@ -149,7 +149,6 @@ function buildQuery(filtered, qSearch, sortBy, latitude, longitude) {
         query.push("ORDER BY star_rating DESC");
     }
 
-
     return query.join(" "); // Concatenate into single string
 }
 
@@ -162,29 +161,40 @@ async function getVenuesResults(dbVenues, filters) {
     const photos = await getPrimaryPhotos();
 
     if (typeof count === "undefined") count = dbVenues.length;
-    for(let i=0; typeof dbVenues[i] !== "undefined" && i <= count; i++) {
+    for(let i=0; typeof dbVenues[i] !== "undefined"; i++) {
         let starRatings = await db.getPool().query("SELECT AVG(star_rating) AS average FROM Review WHERE " +
             "reviewed_venue_id = ?", [dbVenues[i]["venue_id"]]);
 
         if (typeof starRatings[0] !== "undefined" && typeof starRating !== "undefined" && starRatings[0]["average"] < starRating) {continue;}
+
+        let photo = (typeof photos[dbVenues[i]["venue_id"]] !== "undefined") ? photos[dbVenues[i]["venue_id"]] : null;
+        let cost = (typeof costs[dbVenues[i]["venue_id"]] !== "undefined") ? costs[dbVenues[i]["venue_id"]] : null;
+        let star = (starRatings[0]["average"] !== null) ? starRatings[0]["average"] : null;
 
         result.push(
             {"venueId":dbVenues[i]["venue_id"], "venueName":dbVenues[i]["venue_name"],
                 "categoryId":dbVenues[i]["category_id"], "city":dbVenues[i]["city"],
                 "shortDescription":dbVenues[i]["short_description"], "latitude":dbVenues[i]["latitude"],
                 "longitude": dbVenues[i]["longitude"],
-                "meanStarRating": (starRatings[0]["average"] !== null) ? starRatings[0]["average"] : undefined,
-                "modeCostRating":costs[dbVenues[i]["venue_id"]],
-                "primaryPhoto": (typeof photos[dbVenues[i]["venue_id"]] !== "undefined") ? photos[dbVenues[i]["venue_id"]] : null,
+                "meanStarRating": star,
+                "modeCostRating": cost,
+                "primaryPhoto": photo,
                 "distance":
                     (typeof latitude !== "undefined" && typeof longitude !== "undefined") ?
                         getDistance(dbVenues[i]["latitude"], latitude, dbVenues[i]["longitude"], longitude) : undefined}
         )
     }
-    startIndex = (startIndex === result.length) ? result.length - 1 : startIndex;
 
+    startIndex = (typeof startIndex === "undefined") ? result.length - 1: startIndex;
+    startIndex = (startIndex === result.length) ? result.length - 1: startIndex;
+   
+    let final = [];
+    // Generate list from startIndex with length count
+    for (let i = startIndex; typeof result[i] !== "undefined" && i <= count; i++) {
+        final.push(result[i]);
+    }
 
-    return result.slice(startIndex);
+    return final;
 }
 
 
@@ -216,18 +226,17 @@ exports.getAll = async function(values) {
     if (typeof filtered["latitude"] !== "undefined") delete filtered["latitude"];
     if (typeof filtered["longitude"] !== "undefined") delete filtered["longitude"];
 
-
+    let query = buildQuery(filtered, qSearch, sortBy, latitude, longitude);
     const filters = [count, startIndex, latitude, longitude, starRating];
     if (Object.keys(filtered).length === 0) {
-        finalQuery = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, " +
-            "latitude, longitude FROM Venue");
+        finalQuery = await db.getPool().query("SELECT DISTINCT venue_id, venue_name, category_id, city, short_description, " +
+            "latitude, longitude FROM Venue LEFT JOIN Review ON Review.reviewed_venue_id = Venue.venue_id " + query);
     } else {
         let query = buildQuery(filtered, qSearch, sortBy, latitude, longitude);
         finalQuery =  await db.getPool().query(
             "SELECT DISTINCT V.venue_id, V.venue_name, V.category_id, V.city, V.short_description, V.latitude, V.longitude " +
-            "FROM Venue V INNER JOIN Review R ON V.venue_id = R.reviewed_venue_id INNER JOIN ModeCostRating M " +
-            "ON R.reviewed_venue_id = M.venue_id " + query );
-        console.log(query);
+            "FROM Venue V LEFT JOIN Review R ON V.venue_id = R.reviewed_venue_id LEFT JOIN ModeCostRating M " +
+            "ON V.venue_id = M.venue_id " + query );
     }
 
 
