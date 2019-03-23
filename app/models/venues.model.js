@@ -175,7 +175,7 @@ async function getVenuesResults(dbVenues, filters) {
                 "longitude": dbVenues[i]["longitude"],
                 "meanStarRating": (starRatings[0]["average"] !== null) ? starRatings[0]["average"] : undefined,
                 "modeCostRating":costs[dbVenues[i]["venue_id"]],
-                "primaryPhoto":photos[dbVenues[i]["venue_id"]],
+                "primaryPhoto": (typeof photos[dbVenues[i]["venue_id"]] !== "undefined") ? photos[dbVenues[i]["venue_id"]] : null,
                 "distance":
                     (typeof latitude !== "undefined" && typeof longitude !== "undefined") ?
                         getDistance(dbVenues[i]["latitude"], latitude, dbVenues[i]["longitude"], longitude) : undefined}
