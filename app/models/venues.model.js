@@ -166,7 +166,7 @@ async function getVenuesResults(dbVenues, filters) {
         let starRatings = await db.getPool().query("SELECT AVG(star_rating) AS average FROM Review WHERE " +
             "reviewed_venue_id = ?", [dbVenues[i]["venue_id"]]);
 
-        if (typeof starRatings[0] !== "undefined" && starRatings["average"] < starRating) {continue;}
+        if (typeof starRatings[0] !== "undefined" && typeof starRating !== "undefined" && starRatings[0]["average"] < starRating) {continue;}
 
         result.push(
             {"venueId":dbVenues[i]["venue_id"], "venueName":dbVenues[i]["venue_name"],
@@ -217,7 +217,7 @@ exports.getAll = async function(values) {
     if (typeof filtered["longitude"] !== "undefined") delete filtered["longitude"];
 
 
-    const filters = [count, startIndex, latitude, longitude];
+    const filters = [count, startIndex, latitude, longitude, starRating];
     if (Object.keys(filtered).length === 0) {
         finalQuery = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, " +
             "latitude, longitude FROM Venue");
