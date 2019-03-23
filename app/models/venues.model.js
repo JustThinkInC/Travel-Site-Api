@@ -242,7 +242,7 @@ exports.getAll = async function(values) {
 
     console.log("COUNT " + count);
     console.log(result);
-    startIndex = (startIndex >= result.length) ? result.length - 1: startIndex;
+    startIndex = (startIndex == result.length) ? result.length - 1: startIndex;
     console.log("START INDEX " + startIndex);
     return result.slice(startIndex);
 };
