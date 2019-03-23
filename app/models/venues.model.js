@@ -201,7 +201,7 @@ exports.getAll = async function(values) {
             query.push(`ORDER BY ${sortBy}`);
         }
     } else {
-        query.push("ORDER BY star_rating");
+        query.push("ORDER BY star_rating DESC");
     }
 
     query = query.join(" ");
@@ -215,7 +215,7 @@ exports.getAll = async function(values) {
             "ON R.reviewed_venue_id = M.venue_id "
         + query );
 
-    console.log(dbRes.length);
+
     console.log(dbRes);
 
     if (typeof count === "undefined") count = dbRes.length;
@@ -240,7 +240,7 @@ exports.getAll = async function(values) {
         });
     }
 
-    console.log("COUNT " + count)
+    console.log("COUNT " + count);
     console.log(result);
 
     return result.slice(startIndex);
