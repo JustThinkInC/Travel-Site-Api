@@ -233,7 +233,7 @@ exports.getAll = async function(values) {
             "longitude": dbRes[i]["longitude"],
             "meanStarRating": (starRatings[0]["average"] !== null) ? starRatings[0]["average"] : undefined,
             "modeCostRating":costs[dbRes[i]["venue_id"]],
-            "primaryPhoto":(typeof photos[dbRes[i]["venue_id"]] !== "undefined") ? photos[dbRes[i]["venue_id"]] : null,
+            "primaryPhoto":(typeof photos[dbRes[i]["venue_id"]] !== "undefined") ? photos[dbRes[i]["venue_id"]] : "",
             "distance":
                 (typeof latitude !== "undefined" && typeof longitude !== "undefined") ?
                     getDistance(dbRes[i]["latitude"], latitude, dbRes[i]["longitude"], longitude) : undefined
