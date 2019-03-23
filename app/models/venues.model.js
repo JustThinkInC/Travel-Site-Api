@@ -148,7 +148,6 @@ function buildQuery(filtered, qSearch, sortBy, latitude, longitude) {
     } else {
         query.push("ORDER BY star_rating DESC");
     }
-
     return query.join(" "); // Concatenate into single string
 }
 
@@ -184,10 +183,13 @@ async function getVenuesResults(dbVenues, filters) {
                         getDistance(dbVenues[i]["latitude"], latitude, dbVenues[i]["longitude"], longitude) : undefined}
         )
     }
-
+    console.log(result.length)
+    console.log(startIndex)
     startIndex = (typeof startIndex === "undefined") ? result.length - 1: startIndex;
     startIndex = (startIndex === result.length) ? result.length - 1: startIndex;
-   
+    console.log(startIndex)
+    console.log(result)
+
     let final = [];
     // Generate list from startIndex with length count
     for (let i = startIndex; typeof result[i] !== "undefined" && i <= count; i++) {
@@ -232,11 +234,10 @@ exports.getAll = async function(values) {
         finalQuery = await db.getPool().query("SELECT DISTINCT venue_id, venue_name, category_id, city, short_description, " +
             "latitude, longitude FROM Venue LEFT JOIN Review ON Review.reviewed_venue_id = Venue.venue_id " + query);
     } else {
-        let query = buildQuery(filtered, qSearch, sortBy, latitude, longitude);
         finalQuery =  await db.getPool().query(
             "SELECT DISTINCT V.venue_id, V.venue_name, V.category_id, V.city, V.short_description, V.latitude, V.longitude " +
             "FROM Venue V LEFT JOIN Review R ON V.venue_id = R.reviewed_venue_id LEFT JOIN ModeCostRating M " +
-            "ON V.venue_id = M.venue_id " + query );
+            "ON V.venue_id = M.venue_id " + query);
     }
 
 
