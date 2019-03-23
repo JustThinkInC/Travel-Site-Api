@@ -183,12 +183,13 @@ async function getVenuesResults(dbVenues, filters) {
                         getDistance(dbVenues[i]["latitude"], latitude, dbVenues[i]["longitude"], longitude) : undefined}
         )
     }
-    console.log(result.length)
-    console.log(startIndex)
-    startIndex = (typeof startIndex === "undefined") ? result.length - 1: startIndex;
+    console.log(result.length);
+    console.log(startIndex);
+
+    startIndex = (typeof startIndex === "undefined") ? 0 : startIndex;
     startIndex = (startIndex === result.length) ? result.length - 1: startIndex;
-    console.log(startIndex)
-    console.log(result)
+    console.log(startIndex);
+    console.log(result);
 
     let final = [];
     // Generate list from startIndex with length count
