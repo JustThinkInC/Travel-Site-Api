@@ -15,13 +15,13 @@ exports.view = async function(req, res) {
         res.status(200);
         res.json(result);
     } catch (err) {
-        console.log(err)
         res.setHeader("Content-Type", "application/json");
         res.statusMessage = "Bad Request";
         res.status(400);
         res.json();
     }
 };
+
 
 // POST add a venue
 exports.add = async function(req, res) {

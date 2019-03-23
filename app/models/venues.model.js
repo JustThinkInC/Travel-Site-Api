@@ -152,7 +152,7 @@ function buildQuery(filtered, qSearch, sortBy, latitude, longitude) {
 }
 
 
-// Get the venues filtered result list
+// Get the filtered list of venues
 async function getVenuesResults(dbVenues, filters) {
     let count = filters[0], startIndex = filters[1], latitude = filters[2], longitude = filters[3], starRating = filters[4];
     let result = [];
@@ -169,33 +169,32 @@ async function getVenuesResults(dbVenues, filters) {
         let photo = (typeof photos[dbVenues[i]["venue_id"]] !== "undefined") ? photos[dbVenues[i]["venue_id"]] : null;
         let cost = (typeof costs[dbVenues[i]["venue_id"]] !== "undefined") ? costs[dbVenues[i]["venue_id"]] : null;
         let star = (starRatings[0]["average"] !== null) ? starRatings[0]["average"] : null;
+        let distance = (typeof latitude !== "undefined" && typeof longitude !== "undefined") ?
+            getDistance(dbVenues[i]["latitude"], latitude, dbVenues[i]["longitude"], longitude) : undefined;
 
         result.push(
-            {"venueId":dbVenues[i]["venue_id"], "venueName":dbVenues[i]["venue_name"],
+            {
+                "venueId":dbVenues[i]["venue_id"], "venueName":dbVenues[i]["venue_name"],
                 "categoryId":dbVenues[i]["category_id"], "city":dbVenues[i]["city"],
                 "shortDescription":dbVenues[i]["short_description"], "latitude":dbVenues[i]["latitude"],
-                "longitude": dbVenues[i]["longitude"],
-                "meanStarRating": star,
-                "modeCostRating": cost,
-                "primaryPhoto": photo,
-                "distance":
-                    (typeof latitude !== "undefined" && typeof longitude !== "undefined") ?
-                        getDistance(dbVenues[i]["latitude"], latitude, dbVenues[i]["longitude"], longitude) : undefined}
+                "longitude": dbVenues[i]["longitude"], "meanStarRating": star, "modeCostRating": cost,
+                "primaryPhoto": photo, "distance": distance
+            }
         )
     }
-    console.log(result.length);
-    console.log(startIndex);
 
-    startIndex = (typeof startIndex === "undefined") ? 0 : startIndex;
-    startIndex = (startIndex === result.length) ? result.length - 1: startIndex;
-    console.log(startIndex);
-    console.log(result);
+    if (typeof startIndex === "undefined") {
+        startIndex = 0;
+    } else if (startIndex === result.length) {
+        startIndex = result.length - 1;
+    }
 
     let final = [];
     // Generate list from startIndex with length count
     for (let i = startIndex; typeof result[i] !== "undefined" && i <= count; i++) {
         final.push(result[i]);
     }
+
 
     return final;
 }
