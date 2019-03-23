@@ -70,6 +70,7 @@ async function getCosts() {
 }
 
 
+// Remove empty values from list
 function removeEmpty(list) {
     let filtered = {};
     for(let key in list) {
@@ -79,83 +80,12 @@ function removeEmpty(list) {
     return filtered;
 }
 
-// GET /venues
-exports.getAll = async function(values) {
+
+// Build up the SQL query
+function buildQuery(filtered, qSearch, sortBy, latitude, longitude) {
     let query = [];
-    let result = [];
-    let filtered = removeEmpty(values);
-    let latitude = filtered["latitude"];
-    let longitude = filtered["longitude"];
-
-    if (typeof latitude !== "undefined") delete filtered["latitude"];
-    if (typeof longitude !== "undefined") delete filtered["longitude"];
-
-    let starRating = filtered["minStarRating"];
-    if (typeof filtered["minStarRating"] !== "undefined" && (starRating > 5 || starRating < 0)) throw globals.BADREQUESTERROR;
-
-    let costs = await getCosts();
-    let photos = await getPrimaryPhotos();
-
-    if (Object.keys(filtered).length === 0) {
-        let venues = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, latitude," +
-            " longitude FROM Venue");
-
-
-        for(let i=0; typeof venues[i] !== "undefined"; i++) {
-            let starRatings = await db.getPool().query("SELECT AVG(star_rating) AS average FROM Review WHERE reviewed_venue_id = ?",
-                [venues[i]["venue_id"]]);
-
-            result.push(
-                {"venueId":venues[i]["venue_id"], "venueName":venues[i]["venue_name"],
-                    "categoryId":venues[i]["category_id"], "city":venues[i]["city"],
-                    "shortDescription":venues[i]["short_description"], "latitude":venues[i]["latitude"],
-                    "longitude": venues[i]["longitude"],
-                    "meanStarRating": (starRatings[0]["average"] !== null) ? starRatings[0]["average"] : undefined,
-                    "modeCostRating":costs[venues[i]["venue_id"]],
-                    "primaryPhoto":photos[venues[i]["venue_id"]],
-                    "distance":
-                        (typeof latitude !== "undefined" && typeof longitude !== "undefined") ?
-                            getDistance(venues[i]["latitude"], latitude, venues[i]["longitude"], longitude) : undefined}
-            )
-        }
-
-        return result;
-    }
-
-
-    //throw globals.UNIMPLEMENTED;
-
-    // Get the non-SQL query params
-    let qSearch = filtered["q"];
-    let startIndex = filtered["startIndex"];
-    let count = filtered["count"];
-    let reverseSort = filtered["reverseSort"];
-    let sortBy = filtered["sortBy"];
-
-    // Remove the non-SQL query params if they exist
-    if (typeof qSearch !== "undefined") delete filtered["q"];
-    if (typeof filtered["startIndex"] !== "undefined") delete filtered["startIndex"];
-    if (typeof filtered["count"] !== "undefined") delete filtered["count"];
-    if (typeof filtered["reverseSort"] !== "undefined") delete filtered["reverseSort"];
-    if (typeof filtered["sortBy"] !== "undefined") delete filtered["sortBy"];
-
-    // Change keys to snake_case
-    if (typeof filtered["adminId"] !== "undefined") {
-        filtered["admin_id"] = filtered["adminId"];
-        delete filtered["adminId"];
-    }
-    if (typeof filtered["categoryId"] !== "undefined") {
-        filtered["category_id"] = filtered["categoryId"];
-        delete filtered["categoryId"];
-    }
-
-    // Build up the SQL query
     let firstCondition = true;
-    if (typeof filtered["minStarRating"] !== "undefined") {
-        //query.push(`WHERE star_rating >= ${filtered["minStarRating"]}`);
-        //firstCondition = false;
-        delete filtered["minStarRating"];
-    }
+
     if (typeof filtered["maxCostRating"] !== "undefined") {
         if (firstCondition) {
             query.push(`WHERE mode_cost_rating <= ${filtered["maxCostRating"]}`);
@@ -175,17 +105,28 @@ exports.getAll = async function(values) {
         delete filtered["city"];
     }
 
+    // Change keys to snake_case
+    if (typeof filtered["adminId"] !== "undefined") {
+        filtered["admin_id"] = filtered["adminId"];
+        delete filtered["adminId"];
+    }
+    if (typeof filtered["categoryId"] !== "undefined") {
+        filtered["category_id"] = filtered["categoryId"];
+        delete filtered["categoryId"];
+    }
+
+    // Add conditions for rest of params to query
     for (let key in filtered) {
-        if (!firstCondition) {
-            query.push(`AND ${key} = ${filtered[key]}`);
-        } else {
-            firstCondition = false;
+        if (firstCondition) {
             query.push(`WHERE ${key} = ${filtered[key]}`);
+            firstCondition = false;
+        } else {
+            query.push(`AND ${key} = ${filtered[key]}`);
         }
     }
 
-
-    let dbRes;
+    // If the 'q' param exists
+    // This param restricts results to venues with the search term in their title
     if (qSearch) {
         if (firstCondition) {
             query.push(`WHERE venue_name LIKE '%${qSearch}%'`);
@@ -194,9 +135,13 @@ exports.getAll = async function(values) {
         }
     }
 
+    // Add the sorting filter
+    // Default is star_rating from highest to lowest
     if (typeof sortBy !== "undefined") {
         if (sortBy.toLowerCase() === "distance") {
             if (typeof latitude === "undefined" || typeof longitude === "undefined") throw globals.BADREQUESTERROR;
+        } else if (sortBy.toLowerCase() === "cost_rating") {
+            query.push("ORDER BY mode_cost_rating");
         } else {
             query.push(`ORDER BY ${sortBy}`);
         }
@@ -204,47 +149,89 @@ exports.getAll = async function(values) {
         query.push("ORDER BY star_rating DESC");
     }
 
-    query = query.join(" ");
-    console.log(query);
 
-    dbRes =  await db.getPool().query(
-        "SELECT DISTINCT V.venue_id, V.venue_name, V.category_id, V.city, V.short_description, V.latitude, V.longitude " +
-        "FROM Venue V INNER JOIN Review R " +
-            "ON V.venue_id = R.reviewed_venue_id " +
-        "INNER JOIN ModeCostRating M " +
-            "ON R.reviewed_venue_id = M.venue_id "
-        + query );
+    return query.join(" "); // Concatenate into single string
+}
 
 
-    console.log(dbRes);
+// Get the venues filtered result list
+async function getVenuesResults(dbVenues, filters) {
+    let count = filters[0], startIndex = filters[1], latitude = filters[2], longitude = filters[3], starRating = filters[4];
+    let result = [];
+    const costs = await getCosts();
+    const photos = await getPrimaryPhotos();
 
-    if (typeof count === "undefined") count = dbRes.length;
-    for (let i = 0; typeof dbRes[i] !== "undefined" && i <= count; i++) {
+    if (typeof count === "undefined") count = dbVenues.length;
+    for(let i=0; typeof dbVenues[i] !== "undefined" && i <= count; i++) {
+        let starRatings = await db.getPool().query("SELECT AVG(star_rating) AS average FROM Review WHERE " +
+            "reviewed_venue_id = ?", [dbVenues[i]["venue_id"]]);
 
-        let starRatings = await db.getPool().query("SELECT AVG(star_rating) AS average FROM Review WHERE reviewed_venue_id = ?",
-            [dbRes[i]["venue_id"]]);
+        if (typeof starRatings[0] !== "undefined" && starRatings["average"] < starRating) {continue;}
 
-        if (starRatings[0]["average"] < starRating) {continue;}
+        result.push(
+            {"venueId":dbVenues[i]["venue_id"], "venueName":dbVenues[i]["venue_name"],
+                "categoryId":dbVenues[i]["category_id"], "city":dbVenues[i]["city"],
+                "shortDescription":dbVenues[i]["short_description"], "latitude":dbVenues[i]["latitude"],
+                "longitude": dbVenues[i]["longitude"],
+                "meanStarRating": (starRatings[0]["average"] !== null) ? starRatings[0]["average"] : undefined,
+                "modeCostRating":costs[dbVenues[i]["venue_id"]],
+                "primaryPhoto":photos[dbVenues[i]["venue_id"]],
+                "distance":
+                    (typeof latitude !== "undefined" && typeof longitude !== "undefined") ?
+                        getDistance(dbVenues[i]["latitude"], latitude, dbVenues[i]["longitude"], longitude) : undefined}
+        )
+    }
+    startIndex = (startIndex === result.length) ? result.length - 1 : startIndex;
 
-        result.push({
-            "venueId":dbRes[i]["venue_id"], "venueName":dbRes[i]["venue_name"],
-            "categoryId":dbRes[i]["category_id"], "city":dbRes[i]["city"],
-            "shortDescription":dbRes[i]["short_description"], "latitude":dbRes[i]["latitude"],
-            "longitude": dbRes[i]["longitude"],
-            "meanStarRating": (starRatings[0]["average"] !== null) ? starRatings[0]["average"] : undefined,
-            "modeCostRating":costs[dbRes[i]["venue_id"]],
-            "primaryPhoto":(typeof photos[dbRes[i]["venue_id"]] !== "undefined") ? photos[dbRes[i]["venue_id"]] : "None",
-            "distance":
-                (typeof latitude !== "undefined" && typeof longitude !== "undefined") ?
-                    getDistance(dbRes[i]["latitude"], latitude, dbRes[i]["longitude"], longitude) : undefined
-        });
+
+    return result.slice(startIndex);
+}
+
+
+// GET /venues
+exports.getAll = async function(values) {
+    let finalQuery;
+    let filtered = removeEmpty(values);
+
+    // Get the non-SQL query params
+    let qSearch = filtered["q"];
+    let startIndex = filtered["startIndex"];
+    let count = filtered["count"];
+    let reverseSort = filtered["reverseSort"];
+    let sortBy = filtered["sortBy"];
+    let starRating = filtered["minStarRating"];
+    let latitude = filtered["latitude"];
+    let longitude = filtered["longitude"];
+
+    // Remove the non-SQL query params if they exist
+    if (typeof filtered["q"] !== "undefined") delete filtered["q"];
+    if (typeof filtered["startIndex"] !== "undefined") delete filtered["startIndex"];
+    if (typeof filtered["count"] !== "undefined") delete filtered["count"];
+    if (typeof filtered["reverseSort"] !== "undefined") delete filtered["reverseSort"];
+    if (typeof filtered["sortBy"] !== "undefined") delete filtered["sortBy"];
+    if (typeof filtered["minStarRating"] !== "undefined") {
+        if (starRating > 5 || starRating < 0) throw globals.BADREQUESTERROR;
+        delete filtered["minStarRating"];
+    }
+    if (typeof filtered["latitude"] !== "undefined") delete filtered["latitude"];
+    if (typeof filtered["longitude"] !== "undefined") delete filtered["longitude"];
+
+
+    const filters = [count, startIndex, latitude, longitude];
+    if (Object.keys(filtered).length === 0) {
+        finalQuery = await db.getPool().query("SELECT venue_id, venue_name, category_id, city, short_description, " +
+            "latitude, longitude FROM Venue");
+    } else {
+        let query = buildQuery(filtered, qSearch, sortBy, latitude, longitude);
+        finalQuery =  await db.getPool().query(
+            "SELECT DISTINCT V.venue_id, V.venue_name, V.category_id, V.city, V.short_description, V.latitude, V.longitude " +
+            "FROM Venue V INNER JOIN Review R ON V.venue_id = R.reviewed_venue_id INNER JOIN ModeCostRating M " +
+            "ON R.reviewed_venue_id = M.venue_id " + query );
+        console.log(query);
     }
 
-    console.log("COUNT " + count);
-    console.log(result);
-    startIndex = (startIndex == result.length) ? result.length - 1: startIndex;
-    console.log("START INDEX " + startIndex);
-    return result.slice(startIndex);
+
+    return await getVenuesResults(finalQuery, filters);
 };
 
 
