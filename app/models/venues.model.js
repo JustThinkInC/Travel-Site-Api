@@ -240,8 +240,21 @@ exports.getAll = async function(values) {
             "ON V.venue_id = M.venue_id " + query);
     }
 
+    let results = await getVenuesResults(finalQuery, filters);
 
-    return await getVenuesResults(finalQuery, filters);
+    // Sort by distance if requested
+    if (typeof sortBy !== "undefined" && sortBy.toLowerCase() === "distance") {
+        results.sort(function(first, second){
+            return parseFloat(first.distance) - parseFloat(second.distance);
+        });
+    }
+
+    // Sort by reverse if requested
+    if (typeof reverseSort !== "undefined" && reverseSort.toLowerCase() === "true") {
+        results.reverse();
+    }
+
+    return results;
 };
 
 
