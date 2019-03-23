@@ -152,8 +152,8 @@ exports.getAll = async function(values) {
     // Build up the SQL query
     let firstCondition = true;
     if (typeof filtered["minStarRating"] !== "undefined") {
-        query.push(`WHERE star_rating >= ${filtered["minStarRating"]}`);
-        firstCondition = false;
+        //query.push(`WHERE star_rating >= ${filtered["minStarRating"]}`);
+        //firstCondition = false;
         delete filtered["minStarRating"];
     }
     if (typeof filtered["maxCostRating"] !== "undefined") {
@@ -175,7 +175,6 @@ exports.getAll = async function(values) {
         delete filtered["city"];
     }
 
-    console.log(filtered)
     for (let key in filtered) {
         if (!firstCondition) {
             query.push(`AND ${key} = ${filtered[key]}`);
@@ -206,7 +205,7 @@ exports.getAll = async function(values) {
     }
 
     query = query.join(" ");
-    console.log(query+qSearch);
+    console.log(query);
 
     dbRes =  await db.getPool().query(
         "SELECT DISTINCT V.venue_id, V.venue_name, V.category_id, V.city, V.short_description, V.latitude, V.longitude " +
@@ -221,8 +220,12 @@ exports.getAll = async function(values) {
 
     if (typeof count === "undefined") count = dbRes.length;
     for (let i = 0; typeof dbRes[i] !== "undefined" && i <= count; i++) {
+
         let starRatings = await db.getPool().query("SELECT AVG(star_rating) AS average FROM Review WHERE reviewed_venue_id = ?",
             [dbRes[i]["venue_id"]]);
+
+        if (starRatings[0]["average"] < starRating) {continue;}
+
         result.push({
             "venueId":dbRes[i]["venue_id"], "venueName":dbRes[i]["venue_name"],
             "categoryId":dbRes[i]["category_id"], "city":dbRes[i]["city"],
