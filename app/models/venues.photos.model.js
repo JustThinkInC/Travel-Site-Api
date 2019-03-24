@@ -44,14 +44,14 @@ exports.insert = async function(req) {
     await fs.writeFile(newFileName, binary);
 
     if (makePrimary === "true") {
-        await db.getPool().query("UPDATE VenuePhoto SET is_primary = false WHERE is_primary = true");
+        await db.getPool().query("UPDATE VenuePhoto SET is_primary = 0 WHERE is_primary = 1");
         makePrimary = 1;
     } else {
         makePrimary = 0;
     }
 
     // If venue doesn't have primary photo, make this photo primary
-    let hasPrimary = await db.getPool().query("SELECT * FROM VenuePhoto WHERE is_primary = true");
+    let hasPrimary = await db.getPool().query("SELECT * FROM VenuePhoto WHERE is_primary = 1 AND venue_id = ?", [id]);
     if (typeof hasPrimary[0] === "undefined") {
         makePrimary = 1;
     }
@@ -110,4 +110,32 @@ exports.delete = async function(req) {
 
     await fs.unlink(storedName);
     return await db.getPool("DELETE FROM VenuePhoto WHERE venue_id = ? AND photo_filename = ?", [id, photoFileName]);
+};
+
+
+//POST set a photo to be a venue's primary photo
+exports.setPrimary = async function(req) {
+    let id = req.params.id;
+    let auth = req.headers["x-authorization"];
+    let photoFilename = req.params.photoFilename;
+
+    if (typeof auth === "undefined" || auth === null) {
+        throw globals.AUTH_ERROR;
+    }
+
+    // Check venue exists
+    const venueExists = await db.getPool().query("SELECT venue_id, admin_id FROM Venue WHERE venue_id = ?" ,[id]);
+    if (typeof venueExists[0] === "undefined") throw globals.NOT_FOUND_ERROR;
+
+    // Check user is admin of venue
+    const user = await db.getPool().query("SELECT user_id FROM User WHERE auth_token = ?", [auth]);
+    if (typeof user[0] === "undefined" || user[0]["user_id"] !== venueExists[0]["admin_id"]) throw globals.FORBIDDEN_ERROR;
+
+    // Check photo exists
+    let photoExist = await db.getPool().query("SELECT photo_filename FROM VenuePhoto WHERE venue_id = ?", [venueExists[0]["venue_id"]]);
+    if (typeof photoExist === "undefined") throw globals.NOT_FOUND_ERROR;
+
+    // First remove primary photo then set the desired target as primary
+    await db.getPool().query("UPDATE VenuePhoto SET is_primary = 0 WHERE venue_id = ?", venueExists[0]["venue_id"]);
+    return await db.getPool().query("UPDATE VenuePhoto SET is_primary = 1 WHERE photo_filename = ?", id + "_" + photoFilename);
 };
