@@ -79,7 +79,7 @@ exports.viewReviews = async function(id) {
 // GET reviews authored by user
 exports.getUserReviews = async function(req) {
     let id = req.params.id;
-    let auth = req.headers["x-authorisation"];
+    let auth = req.headers["x-authorization"];
     let result = [];
 
     // Check for non-existing auth token
@@ -93,21 +93,28 @@ exports.getUserReviews = async function(req) {
         }
     }
 
+    // Get all reviews and get username
     let reviews = await db.getPool().query("SELECT * FROM Review WHERE review_author_id = ?", [id]);
-    let user = await db.getPool().query("SELECT user_name FROM User WHERE user_id = ?", [id]);
+    let user = await db.getPool().query("SELECT username FROM User WHERE user_id = ?", [id]);
 
-    for (let i = 0; i < user.length && typeof user[i] !== "undefined"; i++) {
-        let venue = await db.getPool().query("SELECT * FROM Venue WHERE venue_id = ?", user[i]["reviewed_venue_id"]);
+    // For each review, push its details to result list
+    for (let i = 0; i < reviews.length && typeof reviews[i] !== "undefined"; i++) {
+        // Get the venue details and primary photo
+        let venue = await db.getPool().query("SELECT * FROM Venue WHERE venue_id = ?", reviews[i]["reviewed_venue_id"]);
         let venuePhoto = await db.getPool().query("SELECT photo_filename FROM VenuePhoto WHERE venue_id = ? " +
             "AND is_primary = 1", [venue[0]["venue_id"]]);
 
-        result.push({"reviewAuthor":{"userId":id, "username":user[i]["user_name"]}, "reviewBody":reviews[i]["review_body"],
-                  "starRating":reviews[i]["star_rating"], "costRating":reviews[i]["cost_rating"],
-                  "timePosted":reviews[i]["time_posted"], "venue":{"venueId":reviews[i]["reviewed_venue_id"],
-                  "venueName":venue[0]["venue_name"], "categoryName":venues[0]["category_name"],
-                  "city":venue[0]["city"], "shortDescription":venue[0]["short_description"],
-                  "primaryPhoto":venuePhoto[0]["photo_filename"]}});
+        result.push(
+            {
+                "reviewAuthor":{"userId":id, "username":user[0]["user_name"]}, "reviewBody":reviews[i]["review_body"],
+                "starRating":reviews[i]["star_rating"], "costRating":reviews[i]["cost_rating"],
+                "timePosted":reviews[i]["time_posted"], "venue":{"venueId":reviews[i]["reviewed_venue_id"],
+                "venueName":venue[0]["venue_name"], "categoryName":venue[0]["category_name"],
+                "city":venue[0]["city"], "shortDescription":venue[0]["short_description"],
+                "primaryPhoto":(typeof venuePhoto[0] !== "undefined") ? venuePhoto[0]["photo_filename"] : null}
+            });
     }
+
 
     return result;
 };
