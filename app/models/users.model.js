@@ -77,11 +77,11 @@ exports.logout = async function(headers) {
     const token = headers["x-authorization"];
 
     // Check token exists
-    if (token === 'undefined' || token === '' || token === null) throw globals.AUTHERROR;
+    if (token === 'undefined' || token === '' || token === null) throw globals.AUTH_ERROR;
     // Delete token if it is found
     const rows = await db.getPool().query('UPDATE User SET auth_token = "" WHERE auth_token = ?', [token]);
     // If no rows have been changed, then no one was logged in
-    if (rows["affectedRows"] === 0) throw globals.AUTHERROR;
+    if (rows["affectedRows"] === 0) throw globals.AUTH_ERROR;
 
 
     return;
@@ -122,13 +122,13 @@ exports.patchUser = async function(req) {
 
     // Check authorisation
     if (typeof auth === "undefined" || auth === "" || auth === null) {
-        throw globals.AUTHERROR;
+        throw globals.AUTH_ERROR;
     } else {
         // Check user exists
         user = await db.getPool().query("SELECT * FROM User WHERE user_id = ?", [id]);
         if (typeof user[0] === "undefined") throw globalsNOTFOUNDERROR;
         // If user is not same as logged in, operation is forbidden
-        if (typeof user[0] === "undefined" || user[0]["auth_token"] !== auth) throw globals.FORBIDDENERROR;
+        if (typeof user[0] === "undefined" || user[0]["auth_token"] !== auth) throw globals.FORBIDDEN_ERROR;
     }
 
     // Updated information
@@ -138,11 +138,11 @@ exports.patchUser = async function(req) {
     // Check information exists
     for(let key in info) {
         if (typeof info[key] === "undefined" || info[key] === null) delete info[key];
-        if (key.toString() === "password" && typeof info[key] === "number") throw globals.BADREQUESTERROR;
-        if (info[key] === '') throw globals.BADREQUESTERROR;
+        if (key.toString() === "password" && typeof info[key] === "number") throw globals.BAD_REQUEST_ERROR;
+        if (info[key] === '') throw globals.BAD_REQUEST_ERROR;
     }
 
-    if (Object.keys(info).length === 0) throw globals.BADREQUESTERROR;
+    if (Object.keys(info).length === 0) throw globals.BAD_REQUEST_ERROR;
 
     return await db.getPool().query("UPDATE User SET ? WHERE user_id = ?", [info, id]);
 };

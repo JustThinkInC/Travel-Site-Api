@@ -39,13 +39,13 @@ exports.insert = async function(req) {
 
     //Check authorisation
     if (typeof auth === "undefined" || auth === "" || auth === null) {
-        throw globals.AUTHERROR;
+        throw globals.AUTH_ERROR;
     } else {
         // Check user exists
         user = await db.getPool().query("SELECT * FROM User WHERE user_id = ?", [id]);
-        if (typeof user[0] === "undefined") throw globals.NOTFOUNDERROR;
+        if (typeof user[0] === "undefined") throw globals.NOT_FOUND_ERROR;
         // If user is not same as logged in, operation is forbidden
-        if (user[0]["auth_token"] !== auth) throw globals.FORBIDDENERROR;
+        if (user[0]["auth_token"] !== auth) throw globals.FORBIDDEN_ERROR;
     }
 
     // Set extension of file to write
@@ -54,7 +54,7 @@ exports.insert = async function(req) {
     } else if (req.headers["content-type"] === JPEG) {
         extension = ".jpeg";
     } else {
-        throw globals.BADREQUESTERROR;  //Invalid request
+        throw globals.BAD_REQUEST_ERROR;  //Invalid request
     }
 
     let existsExtension = await photoExension(id);
@@ -82,7 +82,7 @@ exports.view = async function(id) {
     let extension = await photoExension(id);
 
     if (extension === "null") {
-        throw globals.NOTFOUNDERROR;
+        throw globals.NOT_FOUND_ERROR;
     }
 
     response["content"] = extension.substr(1);
@@ -99,7 +99,7 @@ exports.delete =  async function(req) {
 
     // Check auth token exists
     if (typeof auth === "undefined" || auth === "" || auth === null) {
-        throw globals.AUTHERROR;
+        throw globals.AUTH_ERROR;
     }
 
     // Check auth token matches user
@@ -108,9 +108,9 @@ exports.delete =  async function(req) {
 
     // Check user exists if photo exists
     if (extension === "null") {
-        throw globals.NOTFOUNDERROR;
+        throw globals.NOT_FOUND_ERROR;
     } else if (typeof dbAuth[0] !== "undefined" && dbAuth[0]["user_id"].toString() !== id.toString()) {   // Check authentication matches user
-        throw globals.FORBIDDENERROR;
+        throw globals.FORBIDDEN_ERROR;
     }
     
     // Delete the photo

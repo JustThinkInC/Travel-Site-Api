@@ -11,22 +11,22 @@ exports.addReview = async function(req) {
 
     // Check authorisation
     if (typeof auth === "undefined" || auth === "" || auth === null) {
-        throw globals.AUTHERROR;
+        throw globals.AUTH_ERROR;
     } else {
         // Check user exists
         user = await db.getPool().query("SELECT * FROM User WHERE auth_token = ?", [auth]);
-        if (typeof user[0] === "undefined") throw globals.AUTHERROR;
+        if (typeof user[0] === "undefined") throw globals.AUTH_ERROR;
 
         // Check user is not admin of venue
         const admin = await db.getPool().query("SELECT admin_id FROM Venue WHERE venue_id = ?", [id]);
-        if (user[0]["user_id"] === admin[0]["admin_id"]) throw globals.FORBIDDENERROR;
+        if (user[0]["user_id"] === admin[0]["admin_id"]) throw globals.FORBIDDEN_ERROR;
 
         // Ensure user has not already reviewed said venue
         let reviewedVenues = await db.getPool().query("SELECT reviewed_venue_id FROM Review WHERE review_author_id = ?",
             user[0]["user_id"]);
         reviewedVenues = JSON.parse(JSON.stringify(reviewedVenues));
         for(let i=0; i < Object.keys(reviewedVenues).length; i++) {
-            if (reviewedVenues[i]["reviewed_venue_id"].toString() === id) throw globals.FORBIDDENERROR;
+            if (reviewedVenues[i]["reviewed_venue_id"].toString() === id) throw globals.FORBIDDEN_ERROR;
         }
     }
 
@@ -35,12 +35,12 @@ exports.addReview = async function(req) {
 
     // Ensure all details exist
     for (let i=0; i < review.length; i++) {
-        if (typeof review[i] === "undefined" || review[i] === "" || review[i] === null) throw globals.BADREQUESTERROR;
+        if (typeof review[i] === "undefined" || review[i] === "" || review[i] === null) throw globals.BAD_REQUEST_ERROR;
     }
 
     // Check ratings are valid: non-decimal, and between 0 to 5 inclusive
-    if ((0 > review[3] || review[3] > 5 || 0 > review[4] || review[4] > 5)) throw globals.BADREQUESTERROR;
-    if (review[3] % 1 !== 0 || review[4] % 1 !== 0) throw globals.BADREQUESTERROR;
+    if ((0 > review[3] || review[3] > 5 || 0 > review[4] || review[4] > 5)) throw globals.BAD_REQUEST_ERROR;
+    if (review[3] % 1 !== 0 || review[4] % 1 !== 0) throw globals.BAD_REQUEST_ERROR;
 
     return await db.getPool().query("INSERT INTO Review(reviewed_venue_id, review_author_id, review_body, star_rating," +
         "cost_rating, time_posted) VALUES ?", [[review]]);
@@ -55,7 +55,7 @@ exports.viewReviews = async function(id) {
 
     let numReviews = Object(reviews).length;
     // 404 if no reviews are found
-    if (numReviews === 0) throw globals.NOTFOUNDERROR;
+    if (numReviews === 0) throw globals.NOT_FOUND_ERROR;
 
     // This will hold all the reviews of the venue after
     // building the JSON object of the review
@@ -84,12 +84,12 @@ exports.getUserReviews = async function(req) {
 
     // Check for non-existing auth token
     if (typeof auth === "undefined" || auth === null || auth === "") {
-        throw globals.AUTHERROR;
+        throw globals.AUTH_ERROR;
     } else {
         // Check for invalid auth token
         let authUser = await db.getPool().query("SELECT user_id FROM User WHERE auth_token = ?", [auth]);
         if (typeof authUser[0] === "undefined") {
-            throw globals.AUTHERROR;
+            throw globals.AUTH_ERROR;
         }
     }
 
