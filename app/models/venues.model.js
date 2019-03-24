@@ -249,10 +249,10 @@ exports.getAll = async function(values) {
     let query = queryTemplate["query"];
     let queryValues = queryTemplate["values"];
     const filters = [count, startIndex, latitude, longitude, starRating];
-
+    
     if (Object.keys(filtered).length === 0) {
         finalQuery = await db.getPool().query("SELECT DISTINCT venue_id, venue_name, category_id, city, short_description, " +
-            "latitude, longitude FROM Venue LEFT JOIN Review ON Review.reviewed_venue_id = Venue.venue_id " + queryValues);
+            "latitude, longitude FROM Venue LEFT JOIN Review ON Review.reviewed_venue_id = Venue.venue_id " + query, queryValues);
     } else {
         finalQuery =  await db.getPool().query(
             "SELECT DISTINCT V.venue_id, V.venue_name, V.category_id, V.city, V.short_description, V.latitude, V.longitude " +
