@@ -8,4 +8,7 @@ module.exports = function (app) {
     app.route(app.rootUrl + '/venues/:id/photos/:photoFilename')
         .get(photos.get)
         .delete(photos.remove);
+
+    app.route(app.rootUrl + '/venues/:id/photos/:photoFilename/setPrimary')
+        .post(photos.setPrimary);
 };
