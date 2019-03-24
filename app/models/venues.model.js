@@ -81,27 +81,38 @@ function removeEmpty(list) {
 }
 
 
-// Build up the SQL query
+/**
+ * Build up the SQL query
+ * @param filtered      A filtered list of filters
+ * @param qSearch       Parameter for searching venue titles with value in title
+ * @param sortBy        Sorting order
+ * @param latitude      Latitude of user
+ * @param longitude     Longitude of user
+ * @returns {{query: string, values: Array}}
+ */
 function buildQuery(filtered, qSearch, sortBy, latitude, longitude) {
-    let query = [];
-    let firstCondition = true;
+    let query = [];                     // The query itself
+    let values = [];                    // The values for the SQL query params
+    let firstCondition = true;          // Used to check whether a WHERE or AND should be used
 
     if (typeof filtered["maxCostRating"] !== "undefined") {
         if (firstCondition) {
-            query.push(`WHERE mode_cost_rating <= ${filtered["maxCostRating"]}`);
+            query.push("WHERE mode_cost_rating <= ?");
             firstCondition = false;
         } else {
-            query.push(`AND mode_cost_rating <= ${filtered["maxCostRating"]}`);
+            query.push("AND mode_cost_rating <= ?");
         }
+        values.push(filtered["maxCostRating"]);
         delete filtered["maxCostRating"];
     }
     if (typeof filtered["city"] !== "undefined") {
         if (firstCondition) {
-            query.push(`WHERE city = '${filtered["city"]}'`);
+            query.push("WHERE city = ?");
             firstCondition = false;
         } else {
-            query.push(`AND city = '${filtered["city"]}'`);
+            query.push("AND city = ?");
         }
+        values.push(filtered["city"]);
         delete filtered["city"];
     }
 
@@ -118,37 +129,42 @@ function buildQuery(filtered, qSearch, sortBy, latitude, longitude) {
     // Add conditions for rest of params to query
     for (let key in filtered) {
         if (firstCondition) {
-            query.push(`WHERE ${key} = ${filtered[key]}`);
+            query.push(`WHERE ${key} = ?`);
             firstCondition = false;
         } else {
-            query.push(`AND ${key} = ${filtered[key]}`);
+            query.push(`AND ${key} = ?`);
         }
+        values.push(filtered[key]);
     }
 
     // If the 'q' param exists
     // This param restricts results to venues with the search term in their title
     if (qSearch) {
         if (firstCondition) {
-            query.push(`WHERE venue_name LIKE '%${qSearch}%'`);
+            query.push("WHERE venue_name LIKE ?");
         } else {
-            query.push(`AND venue_name LIKE '%${qSearch}%'`);
+            query.push("AND venue_name LIKE ?");
         }
+        values.push(qSearch);
     }
 
     // Add the sorting filter
     // Default is star_rating from highest to lowest
     if (typeof sortBy !== "undefined") {
         if (sortBy.toLowerCase() === "distance") {
-            if (typeof latitude === "undefined" || typeof longitude === "undefined") throw globals.BADREQUESTERROR;
+            if (typeof latitude === "undefined" || typeof longitude === "undefined") throw globals.BAD_REQUEST_ERROR;
         } else if (sortBy.toLowerCase() === "cost_rating") {
             query.push("ORDER BY mode_cost_rating");
         } else {
-            query.push(`ORDER BY ${sortBy}`);
+            query.push("ORDER BY ?");
+            values.push(sortBy);
         }
     } else {
         query.push("ORDER BY star_rating DESC");
     }
-    return query.join(" "); // Concatenate into single string
+
+    // Return the query string with the values
+    return {"query":query.join(" "), "values":values};
 }
 
 
@@ -222,22 +238,26 @@ exports.getAll = async function(values) {
     if (typeof filtered["reverseSort"] !== "undefined") delete filtered["reverseSort"];
     if (typeof filtered["sortBy"] !== "undefined") delete filtered["sortBy"];
     if (typeof filtered["minStarRating"] !== "undefined") {
-        if (starRating > 5 || starRating < 0) throw globals.BADREQUESTERROR;
+        if (starRating > 5 || starRating < 0) throw globals.BAD_REQUEST_ERROR;
         delete filtered["minStarRating"];
     }
     if (typeof filtered["latitude"] !== "undefined") delete filtered["latitude"];
     if (typeof filtered["longitude"] !== "undefined") delete filtered["longitude"];
 
-    let query = buildQuery(filtered, qSearch, sortBy, latitude, longitude);
+    // Get the query and values for query params
+    const queryTemplate = buildQuery(filtered, qSearch, sortBy, latitude, longitude);
+    let query = queryTemplate["query"];
+    let queryValues = queryTemplate["values"];
     const filters = [count, startIndex, latitude, longitude, starRating];
+
     if (Object.keys(filtered).length === 0) {
         finalQuery = await db.getPool().query("SELECT DISTINCT venue_id, venue_name, category_id, city, short_description, " +
-            "latitude, longitude FROM Venue LEFT JOIN Review ON Review.reviewed_venue_id = Venue.venue_id " + query);
+            "latitude, longitude FROM Venue LEFT JOIN Review ON Review.reviewed_venue_id = Venue.venue_id " + queryValues);
     } else {
         finalQuery =  await db.getPool().query(
             "SELECT DISTINCT V.venue_id, V.venue_name, V.category_id, V.city, V.short_description, V.latitude, V.longitude " +
             "FROM Venue V LEFT JOIN Review R ON V.venue_id = R.reviewed_venue_id LEFT JOIN ModeCostRating M " +
-            "ON V.venue_id = M.venue_id " + query);
+            "ON V.venue_id = M.venue_id " + query, queryValues);
     }
 
     let results = await getVenuesResults(finalQuery, filters);
@@ -262,11 +282,11 @@ exports.getAll = async function(values) {
 exports.insert = async function(headers, body) {
     // Check if authorization exists
     let auth = headers["x-authorization"];
-    if (auth === '' || typeof auth === "undefined" || auth === null) throw globals.AUTHERROR;
+    if (auth === '' || typeof auth === "undefined" || auth === null) throw globals.AUTH_ERROR;
 
     // Validate token exists
     let user = (await db.getPool().query("SELECT user_id, auth_token FROM User WHERE auth_token = ?", [auth]))[0];
-    if (typeof user === "undefined" || user["auth_token"] === null || typeof user["auth_token"] === "undefined") throw globals.AUTHERROR;
+    if (typeof user === "undefined" || user["auth_token"] === null || typeof user["auth_token"] === "undefined") throw globals.AUTH_ERROR;
 
     // Construct info array
     let info = [user["user_id"], body.venueName, body.categoryId, body.city, body.shortDescription, body.longDescription,
@@ -274,15 +294,15 @@ exports.insert = async function(headers, body) {
 
     // Check no value is null or undefined
     for (let i = 1; i < info.length; i++) {
-           if (typeof info[i] === "undefined" || info[i] === '') throw globals.BADREQUESTERROR;
+           if (typeof info[i] === "undefined" || info[i] === '') throw globals.BAD_REQUEST_ERROR;
     }
     // Ensure latitude/longitude are in valid ranges
-    if (! (-90 <= info[8] && info[8] <= 90 && -180 <= info[9] && info[9] <= 180)) throw globals.BADREQUESTERROR;
+    if (! (-90 <= info[8] && info[8] <= 90 && -180 <= info[9] && info[9] <= 180)) throw globals.BAD_REQUEST_ERROR;
 
     // Check categoryId exists
     const categoryId = (await db.getPool().query("SELECT * FROM VenueCategory WHERE category_id = ?", [info[2]]))[0];
 
-    if (typeof categoryId === "undefined") throw globals.BADREQUESTERROR;
+    if (typeof categoryId === "undefined") throw globals.BAD_REQUEST_ERROR;
 
     return await db.getPool().query("INSERT INTO Venue(admin_id, venue_name, category_id, city, short_description, " +
         "long_description, date_added, address, latitude, longitude) VALUES (?)", [info]);
@@ -338,6 +358,7 @@ exports.getVenue = async function(id) {
         "longitude":venueJSON["longitude"], "photos":photos};
 };
 
+
 // PATCH (update) specific venue
 exports.patchVenue = async function(req) {
     const body = req.body;
@@ -347,14 +368,14 @@ exports.patchVenue = async function(req) {
 
     // Check authorisation
     if (typeof auth === "undefined" || auth === "" || auth === null) {
-        throw globals.AUTHERROR;
+        throw globals.AUTH_ERROR;
     } else {
         venue = await db.getPool().query("SELECT * FROM Venue WHERE venue_id = ?", [id]);
-        if (typeof venue[0] === "undefined") throw globals.NOTFOUNDERROR;
+        if (typeof venue[0] === "undefined") throw globals.NOT_FOUND_ERROR;
         // Get user id of person attempting authorization
         let user = await db.getPool().query("SELECT user_id FROM User WHERE auth_token = ?", [auth]);
         // If user is not admin, operation is forbidden
-        if (typeof user[0] === "undefined" || user[0]["user_id"] !== venue[0]["admin_id"]) throw globals.FORBIDDENERROR;
+        if (typeof user[0] === "undefined" || user[0]["user_id"] !== venue[0]["admin_id"]) throw globals.FORBIDDEN_ERROR;
     }
 
     // Updated information
@@ -367,7 +388,7 @@ exports.patchVenue = async function(req) {
         if (typeof info[key] === "undefined" || info[key] === null) delete info[key];
     }
 
-    if (Object.keys(info).length === 0) throw globals.BADREQUESTERROR;
+    if (Object.keys(info).length === 0) throw globals.BAD_REQUEST_ERROR;
 
     return await db.getPool().query("UPDATE Venue SET ? WHERE venue_id = ?", [info, id]);
 };
