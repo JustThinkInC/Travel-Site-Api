@@ -41,7 +41,42 @@ module.exports = function () {
 
     // DEBUG (you can remove this)
     app.get('/', function (req, res) {
-        res.send({ 'message': 'Hello World!' })
+        res.send("<font face='helvetica, arial'><h1> Welcome to the SENG365 Travel Site API</h1>" +
+            "<br><h2>Supported Endpoints:</h2>" +
+            "<h3>Venues</h3>" +
+            "<ul>" +
+            "<li>GET /venues &emsp; <i>view venues</i></li>" +
+            "<li>POST /venues &emsp; <i>Add a new venue</i></li>" +
+            "<li>PATCH /venues/{id} &emsp; <i>Change a venue's details</i></li>" +
+            "<li>GET /categories &emsp; <i>Retrieves all data about venue categories</i></li>" +
+            "</ul><br>" +
+            "<h3>Venues Photos</h3>" +
+            "<ul>" +
+            "<li>POST /venues/{id}/photos &emsp; <i>Add a photo to a venue</i></li>" +
+            "<li>GET /venues/{id}/photos/{photoFilename} &emsp; <i>Retrieve a given photo for a venue</i></li>" +
+            "<li>DELETE /venues/{id}/photos/{photoFilename} &emsp; <i>Delete a venue's photo</i></li>" +
+            "<li>POST /venues/{id}/photos/{photoFilename}/setPrimary &emsp; <i>Set a photo as the primary one for this venue</i></li>" +
+            "</ul><br>" +
+            "<h3>Reviews</h3>" +
+            "<ul>" +
+            "<li>GET /venues/{id}/reviews &emsp; <i>Retrieves a venue's reviews</i></li>" +
+            "<li>POST /venues/{id}/reviews &emsp; <i>Post a review for a venue</i></li>" +
+            "<li>GET /users/{id}/reviews &emsp; <i>Retrieves all the reviews authored by a given user</i></li>" +
+            "</ul><br>" +
+            "<h3>Users</h3>" +
+            "<uL>" +
+            "<li>POST /users &emsp; <i>Register as a new user</i></li>" +
+            "<li>POST /users/login &emsp; <i>Login as an existing user</i></li>" +
+            "<li>POST /users/logout &emsp; <i>Logs out the currently authorised user</i></li>" +
+            "<li>GET /users/{id} &emsp; <i>Retrieve all information about a user</i></li>" +
+            "<li>PATCH /users/{id} &emsp; <i>Change a user's details</i></li>" +
+            "</uL><br>" +
+            "<h3>User's Photos</h3>" +
+            "<ul>" +
+            "<li>GET /users/{id}/photo &emsp; <i>Retrieve a user's profile photo</i></li>" +
+            "<li>PUT /users/{id}/photo &emsp; <i>Set a user's profile photo</i></li>" +
+            "<li>DELETE /users/{id}/photo &emsp; <i>Delete a user's profile photo</i></li>" +
+            "</ul></font face>")
     });
 
     return app;
