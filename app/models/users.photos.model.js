@@ -68,7 +68,7 @@ exports.insert = async function(req) {
     // Set the filename of photo
     filename = user[0]["user_id"]+extension;
 
-    await fs.writeFile(FOLDER + filename, req.body);
+    await fs.writeFile(FOLDER + filename, body);
     await db.getPool().query("UPDATE User SET profile_photo_filename = ? WHERE user_id = ?", [[filename], [id]]);
 
     return response;
